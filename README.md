@@ -1,16 +1,27 @@
-# React + Vite
+# Eduardo Malta Silva Portfolio
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Attention: This project is still under development. Some bugs are expected as well as unfinished features. There will be daily updates as I work on this. Thank You.
 
-Currently, two official plugins are available:
+A OS/Desktop-like portfolio web app built with React, Vite, and Tailwind CSS. Explore projects, play mini-games, and interact with a custom desktop environment inspired by classic operating systems.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
+- Desktop UI with draggable icons and windows
+- Shortcut creation and management
+- DOS emulator integration (js-dos)
+- Chrome Dino game (name will be changed before the final deployment)
+- PDF viewer and notepad
+- Custom context menus and taskbar
+- Responsive design
 
-## React Compiler
+## Tech Stack
+- React
+- Vite
+- Tailwind CSS
+- js-dos
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## License
+This project is licensed under the MIT License.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+> Built by Eduardo Malta Silva
