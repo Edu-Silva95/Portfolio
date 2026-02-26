@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { windowIcons } from "../../config/desktopConfig";
-import { pathMap } from "../../config/fileSystemData";
+import { useFileSystem } from "../../context/FileSystemContext";
 import TaskBarSearch from "./TaskBarSearch";
 
-const getDynamicIcon = (id, win) => {
+const getDynamicIcon = (fileTree, id, win) => {
   let icon = windowIcons[id];
 
   if (!win?.currentPath) return icon;
@@ -13,9 +13,9 @@ const getDynamicIcon = (id, win) => {
   const lastPart = pathParts[pathParts.length - 1];
   const parentPath = pathParts.slice(0, -1).join(" > ");
 
-  // If current path exists in map, try to pull icon from its parent list
-  if (parentPath && pathMap[parentPath]) {
-    const parent = pathMap[parentPath];
+  // If current path exists in tree, try to pull icon from its parent list
+  if (parentPath && fileTree && fileTree[parentPath]) {
+    const parent = fileTree[parentPath];
     const content = parent.content || parent.folders || [];
     const found = content.find((item) => item.name === lastPart);
     if (found?.icon) icon = found.icon;
@@ -33,7 +33,7 @@ const getDynamicIcon = (id, win) => {
   return icon;
 };
 
-function WindowPreview({ id, win, onCloseWindow, onHover, onLeave, anchorRect }) {
+function WindowPreview({ id, win, onCloseWindow, onHover, onLeave, anchorRect, fileTree }) {
   const [previewContent, setPreviewContent] = useState(null);
   const formatTitle = (value) => value
     .replace(/_/g, " ")
@@ -41,7 +41,7 @@ function WindowPreview({ id, win, onCloseWindow, onHover, onLeave, anchorRect })
 
   // Get window title - use current path for folder windows, otherwise use stored title
   let windowTitle = win.title;
-  let displayIcon = getDynamicIcon(id, win);
+  let displayIcon = getDynamicIcon(fileTree, id, win);
 
   if (win.currentPath) {
     // For folder windows with saved navigation, show current folder name
@@ -125,6 +125,7 @@ function WindowPreview({ id, win, onCloseWindow, onHover, onLeave, anchorRect })
 }
 
 export default function Taskbar({ isVisible = true, onClearSelection, openWindows = {}, onToggleWindow = () => { }, onOpenWindow = () => { }, onCloseWindow = () => { } }) {
+  const { fileTree } = useFileSystem();
   const [startMenuOpen, setStartMenuOpen] = useState(false);
   const [isStartMenuMounted, setIsStartMenuMounted] = useState(false);
   const [isStartMenuVisible, setIsStartMenuVisible] = useState(false);
@@ -396,7 +397,7 @@ export default function Taskbar({ isVisible = true, onClearSelection, openWindow
                       }`}
                   >
                     {(() => {
-                      const icon = getDynamicIcon(id, win);
+                      const icon = getDynamicIcon(fileTree, id, win);
                       return icon ? (
                         icon.includes("/") ? (
                           <img src={icon} alt={id} className="w-6 h-6" />

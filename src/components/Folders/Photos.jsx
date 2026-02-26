@@ -1,52 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import FileTable from "./FileTable";
-
-const photosContent = [
-  { name: "2024 Vacation", icon: "/icons/icons8-folder-94.png", type: "Folder", size: "—", isFolder: true },
-  { name: "Family Events", icon: "/icons/icons8-folder-94.png", type: "Folder", size: "—", isFolder: true },
-  { name: "Nature", icon: "/icons/icons8-folder-94.png", type: "Folder", size: "—", isFolder: true },
-  { name: "Architecture", icon: "/icons/icons8-folder-94.png", type: "Folder", size: "—", isFolder: true },
-  { name: "Favorites", icon: "/icons/icons8-folder-94.png", type: "Folder", size: "—", isFolder: true },
-];
-
-const vacationPhotos = [
-  { name: "beach_001.jpg", icon: "🖼️", type: "JPEG Image", size: "2.4 MB" },
-  { name: "beach_002.jpg", icon: "🖼️", type: "JPEG Image", size: "2.1 MB" },
-  { name: "sunset.jpg", icon: "🖼️", type: "JPEG Image", size: "1.8 MB" },
-  { name: "night_sky.jpg", icon: "🖼️", type: "JPEG Image", size: "3.2 MB" },
-  { name: "landscape.jpg", icon: "🖼️", type: "JPEG Image", size: "2.7 MB" },
-];
-
-const familyPhotos = [
-  { name: "birthday_party.jpg", icon: "🖼️", type: "JPEG Image", size: "2.9 MB" },
-  { name: "gathering.jpg", icon: "🖼️", type: "JPEG Image", size: "3.1 MB" },
-  { name: "kids_playing.jpg", icon: "🖼️", type: "JPEG Image", size: "2.2 MB" },
-];
-
-const naturePhotos = [
-  { name: "forest.jpg", icon: "🖼️", type: "JPEG Image", size: "3.4 MB" },
-  { name: "mountain.jpg", icon: "🖼️", type: "JPEG Image", size: "2.8 MB" },
-  { name: "waterfall.jpg", icon: "🖼️", type: "JPEG Image", size: "3.1 MB" },
-];
-
-// Build a nested path map for the Photos tree.
-const getPhotosPathMap = (basePath) => ({
-  [basePath]: photosContent,
-  [`${basePath} > 2024 Vacation`]: vacationPhotos,
-  [`${basePath} > Family Events`]: familyPhotos,
-  [`${basePath} > Nature`]: naturePhotos,
-});
+import { useFileSystem } from "../../context/FileSystemContext";
 
 export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery = "", viewMode = "list", onCountChange, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null }) {
-  const [pathMap, setPathMap] = useState(() => getPhotosPathMap(basePath));
+  const { fileTree, setFileTree, handleContextMenu } = useFileSystem();
   const [selectedIds, setSelectedIds] = useState([]);
 
-  useEffect(() => {
-    setPathMap(getPhotosPathMap(basePath));
-  }, [basePath]);
+  const resolveGlobal = (p) => (p?.startsWith("This PC") ? p : `This PC > ${p}`);
+  const globalBase = resolveGlobal(basePath);
+  const globalCurrent = resolveGlobal(currentPath);
 
-  // Resolve the list for the current path, fallback to root.
-  const currentContent = pathMap[currentPath] || pathMap[basePath] || [];
+  const currentContent = fileTree[globalCurrent]?.content || fileTree[globalBase]?.content || [];
 
   const filteredContent = useMemo(() => {
     if (!searchQuery.trim()) return currentContent;
@@ -64,9 +28,9 @@ export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery
   }, [currentPath]);
 
   useEffect(() => {
-    const restores = pendingRestores?.[currentPath];
+    const restores = pendingRestores?.[currentPath] || pendingRestores?.[globalCurrent];
     if (!restores || restores.length === 0) return;
-    updateList(currentPath, (prev) => {
+    updateList(globalCurrent, (prev) => {
       const existing = new Set(prev.map((it) => it.name));
       const toAdd = restores
         .map((r) => r.payload || { name: r.name, icon: r.icon, type: "File", size: "—" })
@@ -74,7 +38,7 @@ export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery
       return [...toAdd, ...prev];
     });
     onConsumeRestore?.(currentPath);
-  }, [pendingRestores, currentPath, onConsumeRestore]);
+  }, [pendingRestores, currentPath, globalCurrent, onConsumeRestore]);
 
   // Drill into nested photo folders.
   const handleItemDoubleClick = (item) => {
@@ -84,12 +48,13 @@ export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery
     }
   };
 
-  // Update a specific path list in the local map.
-  const updateList = (path, updater) => {
-    setPathMap((prev) => {
-      const list = Array.isArray(prev[path]) ? [...prev[path]] : [];
+  // Update a specific path list in the shared file tree.
+  const updateList = (globalPath, updater) => {
+    setFileTree((prev) => {
+      const entry = prev[globalPath] ? { ...prev[globalPath] } : { content: [] };
+      const list = Array.isArray(entry.content) ? [...entry.content] : [];
       const nextList = updater(list);
-      return { ...prev, [path]: nextList };
+      return { ...prev, [globalPath]: { ...entry, content: nextList } };
     });
   };
 
@@ -109,7 +74,7 @@ export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery
     }
     const name = prompt("Rename", item.name);
     if (!name || name === item.name) return;
-    updateList(currentPath, (prev) => prev.map((it) => (it.name === item.name ? { ...it, name } : it)));
+    updateList(globalCurrent, (prev) => prev.map((it) => (it.name === item.name ? { ...it, name } : it)));
   };
 
   const handleDelete = (item) => {
@@ -121,8 +86,8 @@ export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery
     const itemsToDelete = shouldDeleteGroup ? selectedItems : [item];
     if (!confirmDelete(itemsToDelete.length)) return;
     const deleteKeys = new Set(itemsToDelete.map((it) => getItemKey(it)));
-    itemsToDelete.forEach((it) => onMoveToRecycleBin?.(it, currentPath));
-    updateList(currentPath, (prev) => prev.filter((it) => !deleteKeys.has(getItemKey(it))));
+    itemsToDelete.forEach((it) => onMoveToRecycleBin?.(it, globalCurrent));
+    updateList(globalCurrent, (prev) => prev.filter((it) => !deleteKeys.has(getItemKey(it))));
     setSelectedIds([]);
   };
 
@@ -135,7 +100,7 @@ export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery
       targetId: null,
       items: [
         { key: "open", label: "Open", onClick: () => handleItemDoubleClick(item) },
-        { key: "shortcut", label: "Create shortcut", onClick: () => onCreateDesktopShortcut?.(item, currentPath) },
+        { key: "shortcut", label: "Create shortcut", onClick: () => onCreateDesktopShortcut?.(item, globalCurrent) },
         { key: "rename", label: "Rename", onClick: () => handleRename(item) },
         { key: "delete", label: "Delete", onClick: () => handleDelete(item) },
       ],
@@ -147,8 +112,10 @@ export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery
       className="flex-1 overflow-auto folder-scroll"
       onContextMenu={(e) => {
         if (!onContextMenuRequested) return;
-        e.preventDefault();
-        onContextMenuRequested({ x: e.clientX, y: e.clientY, targetId: null });
+        // debug log to verify target and path
+        try { console.log("Photos onContextMenu", { globalCurrent, clientX: e.clientX, clientY: e.clientY }); } catch (err) {}
+        // use centralized context menu handler when available
+        handleContextMenu?.(e, globalCurrent, onContextMenuRequested);
       }}
     >
       <FileTable

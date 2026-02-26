@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useFileSystem } from "../../context/FileSystemContext";
 import Window from "../folder_styles/FolderGeneral";
 import FileTable from "./FileTable";
 import FolderToolbar from "./FolderToolbar";
@@ -38,31 +39,10 @@ export default function Documents({
   const [itemCount, setItemCount] = useState(0);
   const [selectedIds, setSelectedIds] = useState([]);
 
-  // Seed data for Documents and nested folders.
-  const [documentsContent, setDocumentsContent] = useState([
-    { name: "Curriculum Vitae.pdf", icon: "/icons/pdf-file-format.ico", type: "PDF Document", size: "245 KB", isImage: true },
-    { name: "Presentation.pptx", icon: "📊", type: "PowerPoint", size: "1.2 MB" },
-    { name: "Report.docx", icon: "/icons/notepad.ico", type: "Word Document", size: "89 KB" },
-    { name: "Budget.xlsx", icon: "📈", type: "Excel Spreadsheet", size: "156 KB" },
-    { name: "Games", icon: "/icons/icons8-folder-94.png", type: "Folder", size: "—", isFolder: true },
-    { name: "Photos", icon: "/icons/icons8-folder-94.png", type: "Folder", size: "—", isFolder: true },
-    { name: "Projects", icon: "/icons/icons8-folder-94.png", type: "Folder", size: "—", isFolder: true },
-  ]);
+  const { fileTree, setFileTree, createFolder, handleContextMenu } = useFileSystem();
 
-  const [projectsContent, setProjectsContent] = useState([
-    { name: "Portfolio Website", icon: "🌐", type: "Folder", size: "—", isFolder: true },
-    { name: "ShopListy", icon: "🛒", type: "Folder", size: "—", isFolder: true },
-    { name: "Foodie", icon: "🍽️", type: "Folder", size: "—", isFolder: true },
-    { name: "Super Simple List", icon: "/icons/notepad.ico", type: "Folder", size: "—", isFolder: true },
-  ]);
-
-  // Path -> list mapping to drive the table content.
-  const pathMap = {
-    "Documents": documentsContent,
-    "Documents > Projects": projectsContent,
-  };
-
-  const currentContent = pathMap[currentPath] || documentsContent;
+  const globalPath = currentPath.startsWith("This PC") ? currentPath : `This PC > ${currentPath}`;
+  const currentContent = fileTree[globalPath]?.content || [];
 
   // Search filter for the current list.
   const filteredContent = useMemo(() => {
@@ -106,15 +86,14 @@ export default function Documents({
     }
   };
 
-  // Update the list that matches the current path.
+  // Update the list that matches the current path (mapped to global path keys).
   const updateCurrentList = (updater) => {
-    if (currentPath === "Documents") {
-      setDocumentsContent((prev) => updater(prev));
-      return;
-    }
-    if (currentPath === "Documents > Projects") {
-      setProjectsContent((prev) => updater(prev));
-    }
+    setFileTree((prev) => {
+      const entry = prev[globalPath] ? { ...prev[globalPath] } : { content: [] };
+      const list = Array.isArray(entry.content) ? [...entry.content] : [];
+      const nextList = updater(list);
+      return { ...prev, [globalPath]: { ...entry, content: nextList } };
+    });
   };
 
   const getItemKey = (item) => item.id ?? item.name;
@@ -225,8 +204,7 @@ export default function Documents({
             className="flex-1 overflow-auto min-h-0 folder-scroll"
             onContextMenu={(e) => {
               if (!onContextMenuRequested) return;
-              e.preventDefault();
-              onContextMenuRequested({ x: e.clientX, y: e.clientY, targetId: null });
+              handleContextMenu?.(e, globalPath, onContextMenuRequested);
             }}
           >
             <FileTable

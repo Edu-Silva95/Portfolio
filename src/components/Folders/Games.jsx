@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import FileTable from "./FileTable";
+import { useFileSystem } from "../../context/FileSystemContext";
 
 // List of games shown in this folder.
 const gamesContent = [
@@ -9,7 +10,7 @@ const gamesContent = [
 ];
 
 export function GamesContent({ basePath = "This PC > Games", searchQuery = "", viewMode = "list", onCountChange, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, onOpenWindow = null, selectedIds: selectedIdsProp = null, onSelectionChange = null }) {
-  const [localGames, setLocalGames] = useState(gamesContent);
+  const { fileTree, setFileTree, handleContextMenu } = useFileSystem();
   const [localSelectedIds, setLocalSelectedIds] = useState([]);
   // Allow parent to control selection when provided.
   const selectedIds = Array.isArray(selectedIdsProp) ? selectedIdsProp : localSelectedIds;
@@ -28,6 +29,10 @@ export function GamesContent({ basePath = "This PC > Games", searchQuery = "", v
     return window.confirm(message);
   };
 
+  const resolveGlobal = (p) => (p?.startsWith("This PC") ? p : `This PC > ${p}`);
+  const globalBase = resolveGlobal(basePath);
+  const localGames = fileTree[globalBase]?.content || gamesContent;
+
   const filteredContent = useMemo(() => {
     if (!searchQuery.trim()) return localGames;
     const q = searchQuery.toLowerCase();
@@ -44,22 +49,28 @@ export function GamesContent({ basePath = "This PC > Games", searchQuery = "", v
   }, [searchQuery]);
 
   useEffect(() => {
-    const restores = pendingRestores?.[basePath];
+    const globalBaseKey = globalBase;
+    const restores = pendingRestores?.[basePath] || pendingRestores?.[globalBaseKey];
     if (!restores || restores.length === 0) return;
-    setLocalGames((prev) => {
-      const existing = new Set(prev.map((it) => it.name));
+    setFileTree((prev) => {
+      const entry = prev[globalBaseKey] ? { ...prev[globalBaseKey] } : { content: [] };
+      const existing = new Set((entry.content || []).map((it) => it.name));
       const toAdd = restores
         .map((r) => r.payload || { name: r.name, icon: r.icon, type: "Game", size: "—" })
         .filter((it) => !existing.has(it.name));
-      return [...toAdd, ...prev];
+      return { ...prev, [globalBaseKey]: { ...entry, content: [...toAdd, ...(entry.content || [])] } };
     });
     onConsumeRestore?.(basePath);
-  }, [pendingRestores, onConsumeRestore, basePath]);
+  }, [pendingRestores, onConsumeRestore, basePath, globalBase, setFileTree]);
 
   const handleRename = (item) => {
     const name = prompt("Rename", item.name);
     if (!name || name === item.name) return;
-    setLocalGames((prev) => prev.map((it) => (it.name === item.name ? { ...it, name } : it)));
+    setFileTree((prev) => {
+      const entry = prev[globalBase] ? { ...prev[globalBase] } : { content: [] };
+      const next = (entry.content || []).map((it) => (it.name === item.name ? { ...it, name } : it));
+      return { ...prev, [globalBase]: { ...entry, content: next } };
+    });
   };
 
   const getItemKey = (item) => item.id ?? item.name;
@@ -75,7 +86,11 @@ export function GamesContent({ basePath = "This PC > Games", searchQuery = "", v
 
     const deleteKeys = new Set(itemsToDelete.map((it) => getItemKey(it)));
     itemsToDelete.forEach((it) => onMoveToRecycleBin?.(it, basePath));
-    setLocalGames((prev) => prev.filter((it) => !deleteKeys.has(getItemKey(it))));
+    setFileTree((prev) => {
+      const entry = prev[globalBase] ? { ...prev[globalBase] } : { content: [] };
+      const next = (entry.content || []).filter((it) => !deleteKeys.has(getItemKey(it)));
+      return { ...prev, [globalBase]: { ...entry, content: next } };
+    });
     updateSelectedIds([]);
   };
 
@@ -110,8 +125,7 @@ export function GamesContent({ basePath = "This PC > Games", searchQuery = "", v
       className="flex-1 min-h-0 overflow-auto folder-scroll"
       onContextMenu={(e) => {
         if (!onContextMenuRequested) return;
-        e.preventDefault();
-        onContextMenuRequested({ x: e.clientX, y: e.clientY, targetId: null });
+        handleContextMenu?.(e, globalBase, onContextMenuRequested);
       }}
     >
       <FileTable

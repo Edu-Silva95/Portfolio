@@ -123,6 +123,10 @@ export const buildDesktopContextMenuItems = ({
       key: "paste",
       label: "Paste",
       onClick: () => {
+          if (!contextMenu.copiedItem) {
+      closeContextMenu();
+      return; // Prevent paste if nothing was copied
+    }
         const id = `pasted-${Date.now()}`;
         const rect = document.documentElement.getBoundingClientRect();
         const localX = Math.max(0, contextMenu.x - rect.left);

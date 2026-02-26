@@ -4,6 +4,7 @@ import FolderToolbar from "../Folders/FolderToolbar";
 import FileTable from "../Folders/FileTable";
 import useFolderNavigation from "../../hooks/useFolderNavigation";
 import { buildPathSegments } from "../../utils/folderPath";
+import { useFileSystem } from "../../context/FileSystemContext";
 
 export default function AboutWindow({
   onClose,
@@ -21,38 +22,8 @@ export default function AboutWindow({
     windowId: "about",
   });
   const [selectedIds, setSelectedIds] = useState([]);
-  const [contentByPath, setContentByPath] = useState(() => ({
-    ["This PC"]: [
-      {
-        id: "desktop-folder",
-        name: "Desktop",
-        icon: "/icons/icons8-folder-94.png",
-        type: "Folder",
-        size: "—",
-        isFolder: true,
-      },
-    ],
-    ["This PC > Desktop"]: [
-      {
-        id: "about-folder",
-        name: "About",
-        icon: "/icons/icons8-folder-94.png",
-        type: "Folder",
-        size: "—",
-        isFolder: true,
-      },
-    ],
-    ["This PC > Desktop > About"]: [
-      {
-        id: "readme-file",
-        name: "Readme.txt",
-        icon: "/icons/document.png",
-        type: "Text Document",
-        size: "1 KB",
-        isOpenable: true,
-      },
-    ],
-  }));
+  const [itemCount, setItemCount] = useState(0);
+  const { fileTree, setFileTree, handleContextMenu } = useFileSystem();
 
   function handleOpen() {
     if (typeof onOpenReadme === "function") return onOpenReadme();
@@ -68,13 +39,17 @@ export default function AboutWindow({
   const aboutPath = "This PC > Desktop > About";
   const desktopPath = "This PC > Desktop";
 
-  const currentItems = contentByPath[currentPath] || [];
+  const currentItems = fileTree[currentPath]?.content || [];
 
   const filteredItems = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return currentItems;
     return currentItems.filter((item) => item.name.toLowerCase().includes(q));
   }, [searchQuery, currentItems]);
+
+  useEffect(() => {
+    setItemCount(filteredItems.length);
+  }, [filteredItems]);
 
   useEffect(() => {
     setSelectedIds([]);
@@ -90,12 +65,11 @@ export default function AboutWindow({
   };
 
   const updateCurrentList = (updater) => {
-    setContentByPath((prev) => {
-      const list = prev[currentPath] || [];
-      return {
-        ...prev,
-        [currentPath]: updater(list),
-      };
+    setFileTree((prev) => {
+      const entry = prev[currentPath] ? { ...prev[currentPath] } : { content: [] };
+      const list = Array.isArray(entry.content) ? [...entry.content] : [];
+      const next = updater(list);
+      return { ...prev, [currentPath]: { ...entry, content: next } };
     });
   };
 
@@ -172,6 +146,7 @@ export default function AboutWindow({
   return (
     <>
       <Window title="📂 About" onClose={onClose} onMinimize={onMinimize} closing={closing} hideScrollbar>
+        <div className="flex flex-col h-full">
         <FolderToolbar
           onBack={handleBack}
           canGoBack={canGoBack}
@@ -190,8 +165,7 @@ export default function AboutWindow({
           className="h-full min-h-0 overflow-hidden"
           onContextMenu={(e) => {
             if (!onContextMenuRequested) return;
-            e.preventDefault();
-            onContextMenuRequested({ x: e.clientX, y: e.clientY, targetId: null });
+            handleContextMenu?.(e, currentPath, onContextMenuRequested);
           }}
         >
           {filteredItems.length > 0 ? (
@@ -208,6 +182,17 @@ export default function AboutWindow({
           ) : (
             <p className="text-white/60 text-sm px-2">No items match your search.</p>
           )}
+        </div>
+        <div className="pt-2 border-t border-white/10 text-xs text-white/70 flex items-center justify-between">
+          <span>
+            {itemCount} item{itemCount === 1 ? "" : "s"}
+          </span>
+          {selectedIds.length > 0 ? (
+            <span>
+              {selectedIds.length} selected
+            </span>
+          ) : null}
+        </div>
         </div>
       </Window>
     </>

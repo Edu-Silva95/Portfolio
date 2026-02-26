@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Window from "../folder_styles/FolderGeneral";
 import ErrorDialog from "../ErrorDialog";
-import { pathMap } from "../../config/fileSystemData";
+import { useFileSystem } from "../../context/FileSystemContext";
 import FileTable from "./FileTable";
 import FolderToolbar from "./FolderToolbar";
 import useFolderNavigation from "../../hooks/useFolderNavigation";
@@ -10,7 +10,7 @@ import { PhotosContent } from "./Photos";
 import { GamesContent } from "./Games";
 
 export default function ThisPC({ onClose, onMinimize, onOpenWindow = () => { }, initialPath = "This PC", centered = false, defaultWidth = 700, defaultHeight = 420, windowId = "", updateWindowPath = null, savedPath = null, savedHistory = null, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, desktopIcons = null, openableIds = [], closing = false }) {
-  const { currentPath, navigationHistory, pushPath, handleBack, handleForward, canGoBack, canGoForward } = useFolderNavigation({
+  const { currentPath, pushPath, handleBack, handleForward, canGoBack, canGoForward } = useFolderNavigation({
     initialPath,
     savedPath,
     savedHistory,
@@ -25,9 +25,8 @@ export default function ThisPC({ onClose, onMinimize, onOpenWindow = () => { }, 
   const [itemCount, setItemCount] = useState(0);
   const [selectedIds, setSelectedIds] = useState([]);
 
-  // Local copy to mutate lists without touching the shared config.
-  const [localPathMap, setLocalPathMap] = useState(() => JSON.parse(JSON.stringify(pathMap)));
-  const currentData = localPathMap[currentPath] || localPathMap["This PC"];
+  const { fileTree, setFileTree, handleContextMenu } = useFileSystem();
+  const currentData = fileTree[currentPath] || fileTree["This PC"];
 
   useEffect(() => {
     if (!desktopIcons) return;
@@ -40,13 +39,20 @@ export default function ThisPC({ onClose, onMinimize, onOpenWindow = () => { }, 
       isFolder: !!icon.isFolder,
       isOpenable: openableIds.includes(icon.id),
     }));
-    setLocalPathMap((prev) => ({
-      ...prev,
-      "This PC > Desktop": {
-        ...prev["This PC > Desktop"],
-        content: desktopContent,
-      },
-    }));
+    setFileTree((prev) => {
+      const existing = (prev["This PC > Desktop"] && Array.isArray(prev["This PC > Desktop"].content))
+        ? prev["This PC > Desktop"].content
+        : [];
+      const same = existing.length === desktopContent.length && existing.every((it, i) => it.name === desktopContent[i]?.name && it.icon === desktopContent[i]?.icon);
+      if (same) return prev;
+      return {
+        ...prev,
+        "This PC > Desktop": {
+          ...(prev["This PC > Desktop"] || {}),
+          content: desktopContent,
+        },
+      };
+    });
   }, [desktopIcons, openableIds]);
 
   // Shared search filter for folders/drives/content lists.
@@ -95,7 +101,7 @@ export default function ThisPC({ onClose, onMinimize, onOpenWindow = () => { }, 
       }
       if (currentPath === "This PC > Desktop") {
         const newPath = `${currentPath} > ${item.name}`;
-        setLocalPathMap((prev) => (prev[newPath]
+        setFileTree((prev) => (prev[newPath]
           ? prev
           : { ...prev, [newPath]: { content: [] } }
         ));
@@ -109,7 +115,7 @@ export default function ThisPC({ onClose, onMinimize, onOpenWindow = () => { }, 
 
   // Utility to update a specific list (folders/drives/content) in the path map.
   const updateList = (path, listKey, updater) => {
-    setLocalPathMap((prev) => {
+    setFileTree((prev) => {
       const entry = prev[path] ? { ...prev[path] } : { [listKey]: [] };
       const list = Array.isArray(entry[listKey]) ? [...entry[listKey]] : [];
       const nextList = updater(list);
@@ -127,7 +133,7 @@ export default function ThisPC({ onClose, onMinimize, onOpenWindow = () => { }, 
   };
 
   const getList = (path, listKey) => {
-    const entry = localPathMap[path];
+    const entry = fileTree[path];
     if (!entry) return [];
     const list = entry[listKey];
     return Array.isArray(list) ? list : [];
@@ -179,7 +185,7 @@ export default function ThisPC({ onClose, onMinimize, onOpenWindow = () => { }, 
     });
   };
 
-  // Restore items from recycle bin for the current path.
+  // Restore items from recycle bin for the current path(ThisPC).
   useEffect(() => {
     const restores = pendingRestores?.[currentPath];
     if (!restores || restores.length === 0) return;
@@ -244,14 +250,14 @@ export default function ThisPC({ onClose, onMinimize, onOpenWindow = () => { }, 
           onViewModeChange={setViewMode}
         />
 
-        <div
-          className="flex flex-col flex-1 min-h-0 overflow-auto space-y-6 folder-scroll"
-          onContextMenu={(e) => {
-            if (!onContextMenuRequested) return;
-            e.preventDefault();
-            onContextMenuRequested({ x: e.clientX, y: e.clientY, targetId: null });
-          }}
-        >
+            <div
+              className="flex flex-col flex-1 min-h-0 overflow-auto space-y-6 folder-scroll"
+              onContextMenu={(e) => {
+                if (!onContextMenuRequested) return;
+                // use centralized context menu handler so actions target the current path
+                handleContextMenu?.(e, currentPath, onContextMenuRequested);
+              }}
+            >
           {currentPath === "This PC" ? (
             <>
               <div>

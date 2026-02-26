@@ -1,4 +1,5 @@
 // No direct React hooks imported here; app state lives in custom hooks
+import { useEffect } from "react";
 import Desktop from "./components/Desktop";
 import ContextMenu from "./components/ContextMenu";
 import InspectorModal from "./components/InspectorModal";
@@ -26,6 +27,7 @@ const PADDING_X = 1;
 const PADDING_Y = 1;
 
 import { windowsConfig, initialIcons } from "./config/desktopConfig";
+import { useFileSystem } from "./context/FileSystemContext";
 
 function App() {
   const openableIds = Object.keys(windowsConfig);
@@ -48,6 +50,19 @@ function App() {
     paddingX: PADDING_X,
     paddingY: PADDING_Y,
   });
+  // register desktop handler so filesystem actions can create desktop icons
+  const { registerDesktopHandler } = useFileSystem();
+  useEffect(() => {
+    if (typeof registerDesktopHandler === "function") {
+      registerDesktopHandler({
+        setIcons: desktop.setIcons,
+        findFreePosition: (existing) => findFreePosition(existing || desktop.icons),
+        getIcons: () => desktop.icons,
+      });
+    }
+    // Intentionally run once to avoid re-registering on every icon change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   const handleIconClick = (id) => {
     const icon = icons.find((it) => it.id === id);
