@@ -4,19 +4,68 @@ import { useState, useRef, useEffect } from "react";
 export default function FolderGeneral({ title, children, onClose, onMinimize, hideScrollbar = false, minimized = false, closing = false, defaultWidth = 700, defaultHeight = 420, centered = false, dataWindowId, contentClassName = "p-4" }) {
   const titleBarHeight = 40;
   const [hasEntered, setHasEntered] = useState(false);
-  
-  // Calculate centered position if requested
-  const getInitialPos = () => {
-    if (!centered || typeof window === 'undefined') {
-      return { x: 120, y: 120 };
-    }
-    const x = Math.max(0, (window.innerWidth - defaultWidth) / 2);
-    const y = Math.max(0, (window.innerHeight - defaultHeight) / 2 - 50);
-    return { x, y };
+  const viewportMargin = 12;
+
+  const getTaskbarHeight = () => {
+    if (typeof window === "undefined") return 0;
+    const taskbar = document.querySelector("#taskbar");
+    return taskbar ? taskbar.getBoundingClientRect().height : 0;
   };
 
-  const [pos, setPos] = useState(getInitialPos());
-  const [size, setSize] = useState({ width: defaultWidth, height: defaultHeight });
+  const getViewportLimits = () => {
+    if (typeof window === "undefined") {
+      return { maxW: defaultWidth, maxH: defaultHeight, viewportW: defaultWidth, viewportH: defaultHeight };
+    }
+    const taskbarH = getTaskbarHeight();
+    const viewportW = window.innerWidth;
+    const viewportH = Math.max(0, window.innerHeight - taskbarH);
+    const maxW = Math.max(200, viewportW - viewportMargin * 2);
+    const maxH = Math.max(titleBarHeight + 80, viewportH - viewportMargin * 2);
+    return { maxW, maxH, viewportW, viewportH };
+  };
+
+  const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+  const clampSizeToViewport = (rawSize) => {
+    const { maxW, maxH } = getViewportLimits();
+    const minW = Math.min(320, maxW);
+    const minH = Math.min(titleBarHeight + 140, maxH);
+    const width = clamp(Number(rawSize?.width ?? defaultWidth), minW, maxW);
+    const height = clamp(Number(rawSize?.height ?? defaultHeight), minH, maxH);
+    return { width, height };
+  };
+
+  const clampPosToViewport = (rawPos, nextSize) => {
+    const { viewportW, viewportH } = getViewportLimits();
+    const width = nextSize?.width ?? defaultWidth;
+    const height = nextSize?.height ?? defaultHeight;
+    const maxX = Math.max(viewportMargin, viewportW - width - viewportMargin);
+    const maxY = Math.max(viewportMargin, viewportH - height - viewportMargin);
+    return {
+      x: clamp(Number(rawPos?.x ?? 0), viewportMargin, maxX),
+      y: clamp(Number(rawPos?.y ?? 0), viewportMargin, maxY),
+    };
+  };
+  
+  const getInitialSize = () => clampSizeToViewport({ width: defaultWidth, height: defaultHeight });
+
+  // Calculate centered position if requested
+  const getInitialPos = (initialSize) => {
+    if (typeof window === "undefined") return { x: 120, y: 120 };
+    const s = initialSize || getInitialSize();
+    const { viewportW, viewportH } = getViewportLimits();
+
+    const base = centered
+      ? { x: (viewportW - s.width) / 2, y: (viewportH - s.height) / 2 - 50 }
+      : { x: 120, y: 120 };
+
+    return clampPosToViewport(base, s);
+  };
+
+  const [size, setSize] = useState(() => getInitialSize());
+
+  const [pos, setPos] = useState(() => getInitialPos(getInitialSize()));
+
   const [isMaximized, setIsMaximized] = useState(false);
   const prevRef = useRef({ pos: null, size: null });
   const [zIndex, setZIndex] = useState(() => {
@@ -51,6 +100,31 @@ export default function FolderGeneral({ title, children, onClose, onMinimize, hi
     const id = window.requestAnimationFrame(() => setHasEntered(true));
     return () => window.cancelAnimationFrame(id);
   }, []);
+
+  // Clamp window into viewport on resize/orientation changes.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleResize = () => {
+      if (isMaximized) {
+        const taskbarH = getTaskbarHeight();
+        const viewportW = window.innerWidth;
+        const viewportH = window.innerHeight - taskbarH;
+        setPos({ x: 0, y: 0 });
+        setSize({ width: viewportW, height: viewportH });
+        return;
+      }
+
+      setSize((prevSize) => {
+        const nextSize = clampSizeToViewport(prevSize);
+        setPos((prevPos) => clampPosToViewport(prevPos, nextSize));
+        return nextSize;
+      });
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [isMaximized]);
 
  // Toggles maximize/restore window
   function handleMaximizeToggle() {
@@ -97,8 +171,9 @@ export default function FolderGeneral({ title, children, onClose, onMinimize, hi
       onResizeStop={(_, __, ref, ___, deltaPos) => {
         const w = parseInt(ref.style.width || ref.offsetWidth, 10);
         const h = parseInt(ref.style.height || ref.offsetHeight, 10);
-        setSize({ width: w, height: h });
-        setPos(deltaPos);
+        const nextSize = clampSizeToViewport({ width: w, height: h });
+        setSize(nextSize);
+        setPos(clampPosToViewport(deltaPos, nextSize));
       }}
       bounds="parent"
       dragHandleClassName="window-title"

@@ -76,7 +76,8 @@ export default function DesktopIcon({
     dragState.current.dragging = false;
     try {
       elRef.current?.releasePointerCapture(e.pointerId);
-    } catch (err) {
+    } catch (_err) {
+      void _err;
     }
 
     // clear visual transform and will-change to let React position the element

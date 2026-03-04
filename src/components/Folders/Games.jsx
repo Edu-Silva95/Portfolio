@@ -4,7 +4,7 @@ import { useFileSystem } from "../../context/FileSystemContext";
 
 // List of games shown in this folder.
 const gamesContent = [
-  { name: "Chrome Dino", icon: "🦖", type: "Game", size: "988 KB", isFolder: false, isOpenable: true },
+  { name: "Dino Game", icon: "🦖", type: "Game", size: "988 KB", isFolder: false, isOpenable: true },
   { name: "Pinball", icon: "🎱", type: "Game", size: "—", isFolder: false, isOpenable: true },
   { name: "DOOM", icon: "/icons/doom.png", type: "Game", size: "—", isFolder: false, isOpenable: true }
 ];
@@ -96,7 +96,7 @@ export function GamesContent({ basePath = "This PC > Games", searchQuery = "", v
 
   // Open the linked game window based on item name.
   const handleOpen = (item) => {
-    if (item.name === "Chrome Dino") {
+    if (item.name === "Dino Game") {
       onOpenWindow?.("dino");
       return;
     } else if (item.name === "DOOM") {

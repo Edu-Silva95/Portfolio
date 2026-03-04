@@ -1,50 +1,42 @@
-import { useEffect, useMemo, useState } from "react";
-import Window from "../folder_styles/FolderGeneral";
-import FolderToolbar from "./FolderToolbar";
-import FileTable from "./FileTable";
-import useFolderNavigation from "../../hooks/useFolderNavigation";
-import { buildPathSegments } from "../../utils/folderPath";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useFileSystem } from "../../../context/FileSystemContext";
+import Window from "../../folder_styles/FolderGeneral";
+import FolderToolbar from "../FolderToolbar";
+import FileTable from "../FileTable";
+import useFolderNavigation from "../../../hooks/useFolderNavigation";
+import { buildPathSegments } from "../../../utils/folderPath";
 
 export default function ProjectsFolder({ onClose, onMinimize, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, closing = false }) {
   const projectsPath = "Documents > Projects";
-  const documentsPath = "Documents";
 
   const { currentPath, pushPath, handleBack, handleForward, canGoBack, canGoForward } = useFolderNavigation({
     initialPath: projectsPath,
     windowId: "projects",
   });
-
-  const [projects, setProjects] = useState([
-    { id: "portfolio-website", name: "Portfolio Website", description: "A personal portfolio website built with React.", link: "", icon: "🌐", type: "Folder", size: "—", isFolder: true },
-    { id: "shoplisty", name: "ShopListy", description: "A full-stack shopping list app filled with features.", link: "", icon: "🛒", type: "Folder", size: "—", isFolder: true },
-    { id: "foodie", name: "Foodie", description: "A food discovery and recipe app.", link: "", icon: "🍽️", type: "Folder", size: "—", isFolder: true },
-    { id: "super-simple-list", name: "Super Simple List", description: "A minimalist list-making app.", link: "", icon: "/icons/notepad.ico", type: "Folder", size: "—", isFolder: true },
-  ]);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState("list");
   const [selectedIds, setSelectedIds] = useState([]);
 
-  const contentByPath = useMemo(() => ({
-    [documentsPath]: [
-      {
-        id: "projects-folder",
-        name: "Projects",
-        icon: "/icons/icons8-folder-94.png",
-        type: "Folder",
-        size: "—",
-        isFolder: true,
-      },
-    ],
-    [projectsPath]: projects,
-  }), [projects]);
+  const { fileTree, setFileTree } = useFileSystem();
 
-  const currentItems = contentByPath[currentPath] || contentByPath[projectsPath] || [];
+  const resolveGlobal = (p) => (p?.startsWith("This PC") ? p : `This PC > ${p}`);
+  const globalPath = resolveGlobal(currentPath);
+
+  const updateCurrentList = useCallback((updater) => {
+    setFileTree((prev) => {
+      const entry = prev[globalPath] ? { ...prev[globalPath] } : { content: [] };
+      const list = Array.isArray(entry.content) ? [...entry.content] : [];
+      const nextList = updater(list);
+      return { ...prev, [globalPath]: { ...entry, content: nextList } };
+    });
+  }, [setFileTree, globalPath]);
 
   const filteredItems = useMemo(() => {
+    const currentItems = fileTree[globalPath]?.content || [];
     if (!searchQuery.trim()) return currentItems;
     const q = searchQuery.toLowerCase();
     return currentItems.filter((it) => it.name.toLowerCase().includes(q));
-  }, [currentItems, searchQuery]);
+  }, [fileTree, globalPath, searchQuery]);
 
   const confirmDelete = (count) => {
     const message = count > 1
@@ -56,32 +48,28 @@ export default function ProjectsFolder({ onClose, onMinimize, onContextMenuReque
   const handleRename = (project) => {
     const name = prompt("Rename", project.name);
     if (!name || name === project.name) return;
-    setProjects((prev) => prev.map((it) => (it.name === project.name ? { ...it, name } : it)));
+    updateCurrentList((prev) => prev.map((it) => (it.name === project.name ? { ...it, name } : it)));
   };
 
   const handleDelete = (project) => {
     if (!confirmDelete(1)) return;
-    onMoveToRecycleBin?.(project, projectsPath);
-    setProjects((prev) => prev.filter((it) => it.name !== project.name));
+    onMoveToRecycleBin?.(project, currentPath);
+    updateCurrentList((prev) => prev.filter((it) => it.name !== project.name));
     setSelectedIds([]);
   };
 
-  const handleOpen = (project) => {
-    if (project.link) window.open(project.link, "_blank", "noopener,noreferrer");
-  };
-
   useEffect(() => {
-    const restores = pendingRestores?.[projectsPath];
+    const restores = pendingRestores?.[currentPath] || pendingRestores?.[globalPath] || pendingRestores?.[projectsPath];
     if (!restores || restores.length === 0) return;
-    setProjects((prev) => {
+    updateCurrentList((prev) => {
       const existing = new Set(prev.map((it) => it.name));
       const toAdd = restores
         .map((r) => r.payload || { id: `restored-${r.name}`, name: r.name, description: "", link: "", icon: "/icons/document.png", type: "File", size: "—", isFolder: false })
         .filter((it) => !existing.has(it.name));
       return [...toAdd, ...prev];
     });
-    onConsumeRestore?.(projectsPath);
-  }, [pendingRestores, onConsumeRestore]);
+    onConsumeRestore?.(currentPath);
+  }, [pendingRestores, currentPath, globalPath, updateCurrentList, onConsumeRestore]);
 
   const handleNavigatePath = (path) => {
     if (!path) return;
@@ -89,16 +77,13 @@ export default function ProjectsFolder({ onClose, onMinimize, onContextMenuReque
     setSelectedIds([]);
   };
 
-  const handleItemDoubleClick = (item) => {
-    if (!item) return;
-    if (currentPath === documentsPath && item.name === "Projects") {
-      pushPath(projectsPath);
-      setSelectedIds([]);
-      return;
+  function handleItemDoubleClick(item) {
+    // Normal folder navigation (treat projects as folders)
+    if (item.isFolder) {
+      pushPath(`${currentPath} > ${item.name}`);
     }
-    handleOpen(item);
-  };
-
+  }
+  
   const pathDisplay = currentPath;
   const pathSegments = buildPathSegments(currentPath);
 
@@ -144,7 +129,7 @@ export default function ProjectsFolder({ onClose, onMinimize, onContextMenuReque
                 targetId: null,
                 items: [
                   { key: "open", label: "Open", onClick: () => handleItemDoubleClick(item) },
-                  { key: "shortcut", label: "Create shortcut", onClick: () => onCreateDesktopShortcut?.(item, projectsPath) },
+                  { key: "shortcut", label: "Create shortcut", onClick: () => onCreateDesktopShortcut?.(item, currentPath) },
                   { key: "rename", label: "Rename", onClick: () => handleRename(item) },
                   { key: "delete", label: "Delete", onClick: () => handleDelete(item) },
                 ],

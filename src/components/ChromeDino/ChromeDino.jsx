@@ -400,7 +400,7 @@ export default function DinoWindow({ onClose, onMinimize, closing = false }) {
   }, [spriteError, spritesReady]);
 
   return (
-    <Window title="🦖 Chrome Dino.exe" onClose={onClose} onMinimize={onMinimize} closing={closing}>
+    <Window title="🦖 Dino Game.exe" onClose={onClose} onMinimize={onMinimize} closing={closing}>
       <div className="p-4 space-y-3 text-sm h-full flex flex-col">
         <div className="w-full flex justify-center">
           <div className="relative">

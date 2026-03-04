@@ -4,7 +4,6 @@ export default function useRecycleBinState({
   icons,
   setIcons,
   setOpenWindows,
-  windowsConfig,
   findFreePosition,
 }) {
   const [recycleBin, setRecycleBin] = useState([]);

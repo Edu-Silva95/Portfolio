@@ -43,7 +43,7 @@ export default function TaskBarSearch({ onOpenWindow = () => { }, onClearSelecti
       title: "Games",
       items: [
         { label: "Games", icon: "/icons/icons8-folder-94.png", windowId: "games" },
-        { label: "Chrome Dino", icon: "/icons/dino_icon.png", windowId: "dino" },
+        { label: "Dino Game", icon: "/icons/dino_icon.png", windowId: "dino" },
         { label: "DOOM", icon: "/icons/doom.png", windowId: "doom" },
       ],
     },

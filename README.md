@@ -8,7 +8,7 @@ A OS/Desktop-like portfolio web app built with React, Vite, and Tailwind CSS. Ex
 - Desktop UI with draggable icons and windows
 - Shortcut creation and management
 - DOS emulator integration (js-dos)
-- Chrome Dino game (name will be changed before the final deployment)
+- Dino game (name will be changed before the final deployment)
 - PDF viewer and notepad
 - Custom context menus and taskbar
 - Responsive design

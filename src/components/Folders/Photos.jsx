@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import FileTable from "./FileTable";
 import { useFileSystem } from "../../context/FileSystemContext";
 
@@ -11,6 +11,16 @@ export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery
   const globalCurrent = resolveGlobal(currentPath);
 
   const currentContent = fileTree[globalCurrent]?.content || fileTree[globalBase]?.content || [];
+
+  // Update a specific path list in the shared file tree.
+  const updateList = useCallback((targetGlobalPath, updater) => {
+    setFileTree((prev) => {
+      const entry = prev[targetGlobalPath] ? { ...prev[targetGlobalPath] } : { content: [] };
+      const list = Array.isArray(entry.content) ? [...entry.content] : [];
+      const nextList = updater(list);
+      return { ...prev, [targetGlobalPath]: { ...entry, content: nextList } };
+    });
+  }, [setFileTree]);
 
   const filteredContent = useMemo(() => {
     if (!searchQuery.trim()) return currentContent;
@@ -38,7 +48,7 @@ export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery
       return [...toAdd, ...prev];
     });
     onConsumeRestore?.(currentPath);
-  }, [pendingRestores, currentPath, globalCurrent, onConsumeRestore]);
+  }, [pendingRestores, currentPath, globalCurrent, updateList, onConsumeRestore]);
 
   // Drill into nested photo folders.
   const handleItemDoubleClick = (item) => {
@@ -46,16 +56,6 @@ export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery
       const newPath = `${currentPath} > ${item.name}`;
       onFolderOpen?.(newPath);
     }
-  };
-
-  // Update a specific path list in the shared file tree.
-  const updateList = (globalPath, updater) => {
-    setFileTree((prev) => {
-      const entry = prev[globalPath] ? { ...prev[globalPath] } : { content: [] };
-      const list = Array.isArray(entry.content) ? [...entry.content] : [];
-      const nextList = updater(list);
-      return { ...prev, [globalPath]: { ...entry, content: nextList } };
-    });
   };
 
   const getItemKey = (item) => item.id ?? item.name;
@@ -112,8 +112,6 @@ export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery
       className="flex-1 overflow-auto folder-scroll"
       onContextMenu={(e) => {
         if (!onContextMenuRequested) return;
-        // debug log to verify target and path
-        try { console.log("Photos onContextMenu", { globalCurrent, clientX: e.clientX, clientY: e.clientY }); } catch (err) {}
         // use centralized context menu handler when available
         handleContextMenu?.(e, globalCurrent, onContextMenuRequested);
       }}

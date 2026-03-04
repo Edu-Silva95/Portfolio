@@ -122,6 +122,23 @@ export function buildWindowExtraProps({
     extraProps.centered = true;
     extraProps.defaultWidth = 900;
     extraProps.defaultHeight = 550;
+
+    // Allow dynamic "open file" behavior by storing filePath in `currentPath`
+    // and optional metadata in `navigationHistory`.
+    if (typeof win?.currentPath === "string" && win.currentPath.trim()) {
+      extraProps.filePath = win.currentPath;
+    }
+    if (win?.navigationHistory && typeof win.navigationHistory === "object") {
+      extraProps.title = win.navigationHistory.title || extraProps.title;
+      extraProps.content = win.navigationHistory.content || extraProps.content;
+    }
+  }
+
+  if (id === "browser") {
+    // Browser can be retargeted to a URL by storing it in the window's `currentPath`.
+    if (typeof win?.currentPath === "string" && win.currentPath.trim()) {
+      extraProps.initialUrl = win.currentPath;
+    }
   }
 
   if (id === "localdisc_c") {

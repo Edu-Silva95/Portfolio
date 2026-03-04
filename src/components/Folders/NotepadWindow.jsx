@@ -1,9 +1,19 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Window from "../folder_styles/FolderGeneral";
 
-export default function NotepadWindow({ onClose, onMinimize, filePath = "/files/untitled.txt", centered = false, defaultWidth = 700, defaultHeight = 420, closing = false }) {
+export default function NotepadWindow({
+  onClose,
+  onMinimize,
+  filePath = "/files/untitled.txt",
+  title = null,
+  content = null,
+  centered = false,
+  defaultWidth = 700,
+  defaultHeight = 420,
+  closing = false,
+}) {
   const [text, setText] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [_loading, setLoading] = useState(false);
   const [wordWrap, setWordWrap] = useState(true);
   const [lineCount, setLineCount] = useState(1);
   const [charCount, setCharCount] = useState(0);
@@ -11,7 +21,16 @@ export default function NotepadWindow({ onClose, onMinimize, filePath = "/files/
   const [zoom, setZoom] = useState(100);
   const [openMenu, setOpenMenu] = useState(null);
   const [fileHandle, setFileHandle] = useState(null);
-  const [fileName, setFileName] = useState(() => (filePath ? filePath.split("/").pop() : "untitled.txt"));
+  const resolvedTitle = useMemo(() => {
+    if (typeof title === "string" && title.trim()) return title.trim();
+    if (filePath) {
+      const name = filePath.split("/").pop();
+      if (name) return name;
+    }
+    return "MyNotes";
+  }, [title, filePath]);
+
+  const [fileName, setFileName] = useState(() => resolvedTitle);
 
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -20,6 +39,12 @@ export default function NotepadWindow({ onClose, onMinimize, filePath = "/files/
   useEffect(() => {
     let canceled = false;
     async function load() {
+      if (typeof content === "string") {
+        setText(content);
+        updateStats(content);
+        setFileName(resolvedTitle);
+        return;
+      }
       if (!filePath) return;
       setLoading(true);
       try {
@@ -28,7 +53,7 @@ export default function NotepadWindow({ onClose, onMinimize, filePath = "/files/
         if (!canceled) {
           setText(t);
           updateStats(t);
-          setFileName(filePath ? filePath.split("/").pop() : "untitled.txt");
+          setFileName(resolvedTitle);
         }
       } catch (err) {
         if (!canceled) setText(`Failed to load ${filePath}: ${err}`);
@@ -38,7 +63,7 @@ export default function NotepadWindow({ onClose, onMinimize, filePath = "/files/
     }
     load();
     return () => (canceled = true);
-  }, [filePath]);
+  }, [filePath, content, resolvedTitle]);
 
   useEffect(() => {
     function handleDocPointerDown(e) {
@@ -332,7 +357,7 @@ export default function NotepadWindow({ onClose, onMinimize, filePath = "/files/
       title={
         <span className="flex items-center gap-2">
           <img src="/icons/notepad.ico" alt="" className="w-4 h-4" />
-          <span>{filePath ? filePath.split("/").pop() : "MyNotes"}</span>
+          <span>{resolvedTitle}</span>
         </span>
       }
       onClose={onClose}

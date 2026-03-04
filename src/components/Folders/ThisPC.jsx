@@ -8,8 +8,73 @@ import useFolderNavigation from "../../hooks/useFolderNavigation";
 import { formatPath, getWindowTitle, buildPathSegments } from "../../utils/folderPath";
 import { PhotosContent } from "./Photos";
 import { GamesContent } from "./Games";
+import { getProjectByFolderPath } from "../../data/projectsData";
 
-export default function ThisPC({ onClose, onMinimize, onOpenWindow = () => { }, initialPath = "This PC", centered = false, defaultWidth = 700, defaultHeight = 420, windowId = "", updateWindowPath = null, savedPath = null, savedHistory = null, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, desktopIcons = null, openableIds = [], closing = false }) {
+function buildProjectReadme(project) {
+  if (!project) return "";
+  const lines = [];
+  lines.push(`# ${project.name || "Project"}`);
+  if (project.tagline) lines.push(`\n> ${project.tagline}`);
+
+  const description = String(project.description || "").trim();
+  if (description) {
+    const markerMatch = description.match(/(many\s+features\s+included[\s\S]*?:)/i);
+    if (markerMatch) {
+      const markerIndex = markerMatch.index ?? -1;
+      const markerText = markerMatch[0];
+      const intro = description.slice(0, markerIndex).trim();
+      const afterMarker = description.slice(markerIndex + markerText.length).trim();
+
+      if (intro) lines.push(`\n${intro}`);
+      lines.push("\n## Features\n");
+
+      const rawItems = afterMarker
+        .split(/\.|\n/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      if (rawItems.length) {
+        lines.push(rawItems.map((it) => `- ${it.replace(/^[-•\s]+/, "")}`).join("\n"));
+      } else {
+        lines.push("- (No feature list provided)");
+      }
+    } else {
+      lines.push(`\n${description}`);
+    }
+  }
+
+  if (Array.isArray(project.tech) && project.tech.length) {
+    lines.push("\n## Tech\n");
+    lines.push(project.tech.map((t) => `- ${t}`).join("\n"));
+  }
+
+  const links = project.links || {};
+  if (links.live || links.repo || links.link) {
+    lines.push("\n## Links\n");
+    if (links.live) lines.push(`- Live: ${links.live}`);
+    if (links.repo) lines.push(`- Repo: ${links.repo}`);
+    if (links.link) lines.push(`- Link: ${links.link}`);
+  }
+
+  return lines.join("\n");
+}
+
+function toDataTextUrl(text) {
+  return `data:text/plain;charset=utf-8,${encodeURIComponent(String(text ?? ""))}`;
+}
+
+function normalizeExternalUrl(raw) {
+  const value = String(raw || "").trim();
+  if (!value) return "";
+  if (/^javascript:/i.test(value)) return "";
+  if (/^data:/i.test(value)) return value;
+  if (/^https?:\/\//i.test(value)) return value;
+  if (/^\/\//.test(value)) return `https:${value}`;
+  if (/^[\w-]+\.[a-z]{2,}/i.test(value)) return `https://${value}`;
+  return `https://www.google.com/search?igu=1&q=${encodeURIComponent(value)}`;
+}
+
+export default function ThisPC({ onClose, onMinimize, onOpenWindow = () => { }, initialPath = "This PC", centered = false, defaultWidth = 700, defaultHeight = 420, windowId = "", updateWindowPath = null, savedPath = null, savedHistory = null, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, openableIds = [], closing = false }) {
   const { currentPath, pushPath, handleBack, handleForward, canGoBack, canGoForward } = useFolderNavigation({
     initialPath,
     savedPath,
@@ -27,33 +92,6 @@ export default function ThisPC({ onClose, onMinimize, onOpenWindow = () => { }, 
 
   const { fileTree, setFileTree, handleContextMenu } = useFileSystem();
   const currentData = fileTree[currentPath] || fileTree["This PC"];
-
-  useEffect(() => {
-    if (!desktopIcons) return;
-    const desktopContent = desktopIcons.map((icon) => ({
-      id: icon.id,
-      name: icon.label,
-      icon: icon.icon,
-      type: icon.isFolder ? "Folder" : "Shortcut",
-      size: icon.isFolder ? "—" : "1 KB",
-      isFolder: !!icon.isFolder,
-      isOpenable: openableIds.includes(icon.id),
-    }));
-    setFileTree((prev) => {
-      const existing = (prev["This PC > Desktop"] && Array.isArray(prev["This PC > Desktop"].content))
-        ? prev["This PC > Desktop"].content
-        : [];
-      const same = existing.length === desktopContent.length && existing.every((it, i) => it.name === desktopContent[i]?.name && it.icon === desktopContent[i]?.icon);
-      if (same) return prev;
-      return {
-        ...prev,
-        "This PC > Desktop": {
-          ...(prev["This PC > Desktop"] || {}),
-          content: desktopContent,
-        },
-      };
-    });
-  }, [desktopIcons, openableIds]);
 
   // Shared search filter for folders/drives/content lists.
   const filterItems = (items = []) => {
@@ -85,6 +123,53 @@ export default function ThisPC({ onClose, onMinimize, onOpenWindow = () => { }, 
     if (item?.id && openableIds.includes(item.id)) {
       onOpenWindow(item.id);
       return;
+    }
+
+    // If we're inside a project folder, allow opening its virtual files.
+    const project = getProjectByFolderPath(currentPath);
+    if (project && !item?.isFolder) {
+      const name = String(item?.name || "");
+      const lower = name.toLowerCase();
+
+      const openNotes = (title, content) => {
+        if (typeof onOpenWindow !== "function" || typeof updateWindowPath !== "function") return;
+        onOpenWindow("notes");
+        updateWindowPath("notes", toDataTextUrl(content), { title, content });
+      };
+
+      const openExternalTab = (url) => {
+        const normalized = normalizeExternalUrl(url);
+        if (!normalized) return false;
+        const win = window.open(normalized, "_blank", "noopener,noreferrer");
+        if (win) return true;
+        if (typeof onOpenWindow === "function" && typeof updateWindowPath === "function") {
+          onOpenWindow("browser");
+          updateWindowPath("browser", normalized, [normalized]);
+        }
+        return false;
+      };
+
+      if (lower === "readme.txt") {
+        const content = buildProjectReadme(project);
+        openNotes(name || "README", content || "(README not available.)");
+        return;
+      }
+
+      if (lower === "live_demo_link.txt") {
+        if (project.links?.live) {
+          openExternalTab(project.links.live);
+        } else {
+          openNotes("live_demo_link.txt", "No live demo link configured for this project.");
+        }
+        return;
+      }
+
+      if (lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".webp") || lower.endsWith(".gif")) {
+        const src = Array.isArray(project.screenshots) && project.screenshots.length ? project.screenshots[0] : "";
+        if (src) openExternalTab(src);
+        else openNotes(name, "No screenshot URL configured for this project.");
+        return;
+      }
     }
 
     // Open CV PDF file

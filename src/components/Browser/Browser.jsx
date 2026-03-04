@@ -1,17 +1,33 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Window from "../folder_styles/FolderGeneral";
 
-export default function ChromeWindow({ onClose, onMinimize, closing = false }) {
+export default function ChromeWindow({ onClose, onMinimize, closing = false, initialUrl = null }) {
   const HOME = "https://www.google.com/webhp?igu=1";
 
-  const [history, setHistory] = useState([HOME]);
+  const normalizedInitialUrl = useMemo(() => {
+    const value = String(initialUrl || "").trim();
+    if (!value) return HOME;
+    if (/^data:/i.test(value)) return value;
+    if (/^https?:\/\//i.test(value)) return value;
+    if (/^[\w-]+\.[a-z]{2,}/i.test(value)) return `https://${value}`;
+    return `https://www.google.com/search?igu=1&q=${encodeURIComponent(value)}`;
+  }, [initialUrl]);
+
+  const [history, setHistory] = useState([normalizedInitialUrl]);
   const [index, setIndex] = useState(0);
-  const [input, setInput] = useState(HOME);
+  const [input, setInput] = useState(normalizedInitialUrl);
   const [reloadTick, setReloadTick] = useState(0);
 
   const iframeRef = useRef(null);
 
   const currentUrl = history[index];
+
+  useEffect(() => {
+    // When the window is opened/retargeted (e.g., from ProjectView), reset to the provided initial URL.
+    setHistory([normalizedInitialUrl]);
+    setIndex(0);
+    setReloadTick((tick) => tick + 1);
+  }, [normalizedInitialUrl]);
 
   useEffect(() => {
     setInput(currentUrl);
@@ -128,7 +144,7 @@ export default function ChromeWindow({ onClose, onMinimize, closing = false }) {
             onClick={() => navigate("https://trex-runner.com/")}
             className="flex items-center justify-center w-8 h-8 rounded hover:bg-white/10"
             aria-label="Open T-Rex Runner"
-            title="Chrome Dino"
+            title="Dino Game"
           >
             <img src="/icons/dino_icon.png" alt="" className="w-7 h-7" />
           </button>

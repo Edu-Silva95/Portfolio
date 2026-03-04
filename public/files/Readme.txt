@@ -1,5 +1,7 @@
 Desktop Version Portfolio - Readme
 
+- Project still under development, some features may be missing and there could be some bugs.
+
 This portfolio is built as a OS style desktop experience using React and Tailwind CSS.
 
 Main features:
@@ -7,7 +9,7 @@ Main features:
 - Functional folders (This PC, Documents, Photos, Games)
 - Taskbar with Start menu and Search panel
 - Window animations (open/close)
-- Integrated mini-apps: Browser, MyNotes, Chrome Dino, DOOM (js-dos)
+- Integrated mini-apps: Browser, MyNotes, Dino Game, DOOM (js-dos)
 
 Navigation tips:
 - Double-click icons to open windows
@@ -26,4 +28,4 @@ Disclaimer:
 them removed, please get in touch with me so I can removed them.
 
 Author:
-Joao
+Eduardo Malta Silva

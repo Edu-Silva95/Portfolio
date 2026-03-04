@@ -14,7 +14,7 @@ export default function RecycleWindow({
   onMinimize,
   closing = false,
 }) {
-  const { currentPath, navigationHistory, pushPath, handleBack, handleForward, canGoBack, canGoForward } = useFolderNavigation({
+  const { currentPath, navigationHistory: _navigationHistory, pushPath, handleBack, handleForward, canGoBack, canGoForward } = useFolderNavigation({
     initialPath: "Recycle Bin",
     windowId: "recycle",
     savedPath: null,

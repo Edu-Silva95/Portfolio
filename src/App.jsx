@@ -1,5 +1,5 @@
 // No direct React hooks imported here; app state lives in custom hooks
-import { useEffect } from "react";
+import { useState } from "react";
 import Desktop from "./components/Desktop";
 import ContextMenu from "./components/ContextMenu";
 import InspectorModal from "./components/InspectorModal";
@@ -8,7 +8,6 @@ import Taskbar from "./components/Taskbar/Taskbar";
 import ScreenSaver from "./components/ScreenSaver";
 
 // hooks
-import useDesktopState from "./hooks/useDesktopState";
 import useDesktopGrid from "./hooks/useDesktopGrid";
 import useContextMenu from "./hooks/useContextMenu";
 import useWindowsState from "./hooks/useWindowsState";
@@ -26,43 +25,34 @@ const ICON_H = 96;
 const PADDING_X = 1;
 const PADDING_Y = 1;
 
-import { windowsConfig, initialIcons } from "./config/desktopConfig";
+import { windowsConfig } from "./config/desktopConfig";
 import { useFileSystem } from "./context/FileSystemContext";
 
 function App() {
   const openableIds = Object.keys(windowsConfig);
   // split state into hooks
-  const desktop = useDesktopState(initialIcons, { ICON_W, ICON_H, PADDING_X, PADDING_Y });
+    // Desktop icon state is now stored in FileSystemContext
+    const { getDesktopIcons, setDesktopIcons, findFreePosition, updateDesktopIconPosition } = useFileSystem();
+    const icons = getDesktopIcons();
+    const [draggingPositions, _setDraggingPositions] = useState({});
+    const [selectedIds, setSelectedIds] = useState([]);
+    const { moveSelectedIcons } = useDesktopGrid({
+      icons,
+      selectedIds,
+      setIcons: setDesktopIcons,
+      updateIconPosition: updateDesktopIconPosition,
+      iconWidth: ICON_W,
+      iconHeight: ICON_H,
+      paddingX: PADDING_X,
+      paddingY: PADDING_Y,
+    });
   const { contextMenu, openContextMenu, closeContextMenu } = useContextMenu();
   const { openWindows, setOpenWindows, openWindow, closeWindow, toggleWindow, minimizeWindow, updateWindowPath } = useWindowsState(
     Object.keys(windowsConfig)
   );
   const { inspector, viewPageSource, inspectElement, closeInspector } = useInspector();
 
-  const { icons, draggingPositions, updateIconPosition, selectedIds, setSelectedIds } = desktop;
-  const { findFreePosition, moveSelectedIcons } = useDesktopGrid({
-    icons,
-    selectedIds,
-    setIcons: desktop.setIcons,
-    updateIconPosition,
-    iconWidth: ICON_W,
-    iconHeight: ICON_H,
-    paddingX: PADDING_X,
-    paddingY: PADDING_Y,
-  });
-  // register desktop handler so filesystem actions can create desktop icons
-  const { registerDesktopHandler } = useFileSystem();
-  useEffect(() => {
-    if (typeof registerDesktopHandler === "function") {
-      registerDesktopHandler({
-        setIcons: desktop.setIcons,
-        findFreePosition: (existing) => findFreePosition(existing || desktop.icons),
-        getIcons: () => desktop.icons,
-      });
-    }
-    // Intentionally run once to avoid re-registering on every icon change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Desktop helpers come from FileSystemContext; no registration needed
   
   const handleIconClick = (id) => {
     const icon = icons.find((it) => it.id === id);
@@ -87,18 +77,17 @@ function App() {
     consumeRestoreForPath,
   } = useRecycleBinState({
     icons,
-    setIcons: desktop.setIcons,
+    setIcons: setDesktopIcons,
     setOpenWindows,
-    windowsConfig,
     findFreePosition,
   });
 
-  const createDesktopShortcut = useCreateShortcut({ icons, setIcons: desktop.setIcons, windowsConfig, findFreePosition });
+  const createDesktopShortcut = useCreateShortcut({ icons, setIcons: setDesktopIcons, windowsConfig, findFreePosition });
 
   const contextMenuItems = buildDesktopContextMenuItems({
     contextMenu,
-    icons: desktop.icons,
-    setIcons: desktop.setIcons,
+    icons,
+    setIcons: setDesktopIcons,
     windowsConfig,
     openWindow,
     closeContextMenu,
@@ -191,8 +180,9 @@ function App() {
           onToggleWindow={toggleWindow}
           onOpenWindow={openWindow}
           onCloseWindow={closeWindow}
+          updateWindowPath={updateWindowPath}
         />
-        <ScreenSaver timeout={120000} onActive={() => console.log("screensaver active")} />
+        <ScreenSaver onActive={() => console.log("screensaver active")} />
       </div>
     </div>
   );

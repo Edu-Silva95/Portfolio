@@ -124,7 +124,14 @@ function WindowPreview({ id, win, onCloseWindow, onHover, onLeave, anchorRect, f
   return createPortal(preview, document.body);
 }
 
-export default function Taskbar({ isVisible = true, onClearSelection, openWindows = {}, onToggleWindow = () => { }, onOpenWindow = () => { }, onCloseWindow = () => { } }) {
+export default function Taskbar({
+  onClearSelection,
+  openWindows = {},
+  onToggleWindow = () => { },
+  onOpenWindow = () => { },
+  onCloseWindow = () => { },
+  updateWindowPath = null,
+}) {
   const { fileTree } = useFileSystem();
   const [startMenuOpen, setStartMenuOpen] = useState(false);
   const [isStartMenuMounted, setIsStartMenuMounted] = useState(false);
@@ -222,15 +229,47 @@ export default function Taskbar({ isVisible = true, onClearSelection, openWindow
     return <span className={emojiClassName}>{item.icon}</span>;
   };
 
+  const buildHistoryFromPath = (path) => {
+    const parts = String(path || "").split(" > ").filter(Boolean);
+    return parts.map((_, idx) => parts.slice(0, idx + 1).join(" > "));
+  };
+
+  const openWindowAtPath = (windowId, path) => {
+    onOpenWindow(windowId);
+    if (updateWindowPath && path) {
+      updateWindowPath(windowId, path, buildHistoryFromPath(path));
+    }
+  };
+
+  const openDocumentsFolder = (documentsPath) => openWindowAtPath("documents", documentsPath);
+
   const pinnedItems = [
-    { label: "ShopListy", icon: "/icons/icons8-folder-94.png" },
-    { label: "Chefie", icon: "/icons/icons8-folder-94.png" },
-    { label: "Super Simple List", icon: "/icons/icons8-folder-94.png" },
+    {
+      label: "ShopListy",
+      icon: "/icons/icons8-folder-94.png",
+      action: () => openDocumentsFolder("Documents > Projects > Full-stack Projects > ShopListy"),
+    },
+    {
+      label: "Chefie",
+      icon: "/icons/icons8-folder-94.png",
+      action: () => openDocumentsFolder("Documents > Projects > Full-stack Projects > Chefie"),
+    },
+    {
+      label: "Foodie",
+      icon: "/icons/icons8-folder-94.png",
+      action: () => openDocumentsFolder("Documents > Projects > Full-stack Projects > Foodie"),
+    },
+    {
+      label: "Super Simple List",
+      icon: "/icons/icons8-folder-94.png",
+      action: () => openDocumentsFolder("Documents > Projects > Full-stack Projects > Super Simple List"),
+    },
     { label: "This PC", icon: "🖥️", action: () => onOpenWindow("thispc") },
     { label: "MyNotes", icon: "/icons/notepad.ico", action: () => onOpenWindow("notes") },
     { label: "Photos", icon: "/icons/icons8-folder-94.png", action: () => onOpenWindow("photos") },
     { label: "Games", icon: "/icons/icons8-folder-94.png", action: () => onOpenWindow("games") },
     { label: "Browser", icon: "/icons/chrome.png", action: () => onOpenWindow("browser") },
+    { label: "Dino Game", icon: "/icons/dino_icon.png", action: () => onOpenWindow("dino") },
   ];
 
   const recommendedItems = [

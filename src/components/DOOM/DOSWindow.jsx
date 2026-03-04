@@ -94,6 +94,7 @@ export default function DOSWindow({ onClose, onMinimize, closing = false }) {
             }
             dos.setVolume?.(1);
           } catch (err) {
+            void err;
           }
         };
         // Wait for the Dos instance to be ready and attach to its canvas
@@ -123,7 +124,9 @@ export default function DOSWindow({ onClose, onMinimize, closing = false }) {
       cancelled = true;
       try {
         dosRef.current?.stop?.();
-      } catch { }
+      } catch (_err) {
+        void _err;
+      }
     };
   }, []);
 

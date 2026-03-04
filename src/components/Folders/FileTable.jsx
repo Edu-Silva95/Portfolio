@@ -110,7 +110,10 @@ const FileTable = ({ items = [], onItemClick, onItemDoubleClick, viewMode = "lis
                 data-file-id={itemKey}
                 type="button"
                 onClick={() => onItemClick && onItemClick(item)}
-                onDoubleClick={() => onItemDoubleClick && onItemDoubleClick(item)}
+                  onDoubleClick={() => {
+                    console.log("FileTable double-click", item);
+                    onItemDoubleClick && onItemDoubleClick(item);
+                  }}
                 onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onItemContextMenu && onItemContextMenu(item, e); }}
                 className={`${interactive ? "cursor-pointer hover:bg-white/10" : "cursor-default"} ${isSelected ? "bg-[#66a6ff]/20 ring-1 ring-[#66a6ff]/70" : ""} w-24 h-auto flex flex-col items-center gap-1 p-1 rounded transition text-center overflow-hidden`}
               >
@@ -163,7 +166,10 @@ const FileTable = ({ items = [], onItemClick, onItemDoubleClick, viewMode = "lis
               key={item.id ?? item.name}
               data-file-id={item.id ?? item.name}
               onClick={() => onItemClick && onItemClick(item)}
-              onDoubleClick={() => onItemDoubleClick && onItemDoubleClick(item)}
+                onDoubleClick={() => {
+                  console.log("FileTable double-click", item);
+                  onItemDoubleClick && onItemDoubleClick(item);
+                }}
               onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onItemContextMenu && onItemContextMenu(item, e); }}
               className={`${item.path || item.isFolder || item.isOpenable || item.name === "Curriculum Vitae.pdf" ? "cursor-pointer hover:bg-white/5" : "cursor-default"} ${selectedIds.includes(item.id ?? item.name) ? "bg-[#66a6ff]/15" : ""} border-b border-white/5 transition`}
             >

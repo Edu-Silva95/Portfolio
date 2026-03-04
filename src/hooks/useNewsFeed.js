@@ -64,7 +64,8 @@ export default function useNewsFeed({ enabled = false } = {}) {
           CACHE_KEY,
           JSON.stringify({ timestamp: Date.now(), items })
         );
-      } catch {
+      } catch (_err) {
+        void _err;
       }
     };
 
