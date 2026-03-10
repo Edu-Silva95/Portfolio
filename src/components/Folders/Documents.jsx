@@ -8,77 +8,16 @@ import { formatPath, getWindowTitle, buildPathSegments } from "../../utils/folde
 import { PhotosContent } from "./Photos";
 import { GamesContent } from "./Games";
 import { getProjectByFolderPath } from "../../data/projectsData";
-
-function buildProjectReadme(project) {
-  if (!project) return "";
-  const lines = [];
-  lines.push(`# ${project.name || "Project"}`);
-  if (project.tagline) lines.push(`\n> ${project.tagline}`);
-
-  const description = String(project.description || "").trim();
-  if (description) {
-    const markerMatch = description.match(/(many\s+features\s+included[\s\S]*?:)/i);
-    if (markerMatch) {
-      const markerIndex = markerMatch.index ?? -1;
-      const markerText = markerMatch[0];
-      const intro = description.slice(0, markerIndex).trim();
-      const afterMarker = description.slice(markerIndex + markerText.length).trim();
-
-      if (intro) lines.push(`\n${intro}`);
-      lines.push("\n## Features\n");
-
-      const rawItems = afterMarker
-        .split(/\.|\n/)
-        .map((s) => s.trim())
-        .filter(Boolean);
-
-      if (rawItems.length) {
-        lines.push(rawItems.map((it) => `- ${it.replace(/^[-•\s]+/, "")}`).join("\n"));
-      } else {
-        lines.push("- (No feature list provided)");
-      }
-    } else {
-      lines.push(`\n${description}`);
-    }
-  }
-
-  if (Array.isArray(project.tech) && project.tech.length) {
-    lines.push("\n## Tech\n");
-    lines.push(project.tech.map((t) => `- ${t}`).join("\n"));
-  }
-
-  const links = project.links || {};
-  if (links.live || links.repo || links.link) {
-    lines.push("\n## Links\n");
-    if (links.live) lines.push(`- Live: ${links.live}`);
-    if (links.repo) lines.push(`- Repo: ${links.repo}`);
-    if (links.link) lines.push(`- Link: ${links.link}`);
-  }
-
-  return lines.join("\n");
-}
-
-function toDataTextUrl(text) {
-  return `data:text/plain;charset=utf-8,${encodeURIComponent(String(text ?? ""))}`;
-}
-
-function normalizeExternalUrl(raw) {
-  const value = String(raw || "").trim();
-  if (!value) return "";
-  if (/^javascript:/i.test(value)) return "";
-  if (/^data:/i.test(value)) return value;
-  if (/^https?:\/\//i.test(value)) return value;
-  if (/^\/\//.test(value)) return `https:${value}`;
-  if (/^[\w-]+\.[a-z]{2,}/i.test(value)) return `https://${value}`;
-  return `https://www.google.com/search?igu=1&q=${encodeURIComponent(value)}`;
-}
+import { buildProjectReadme } from "../../utils/projectsReadme";
+import { openExternalUrl } from "../../utils/externalUrl";
 
 export default function Documents({
   onClose,
   onMinimize,
   onOpenWindow = () => { },
   initialPath = "Documents",
-  centered = false, defaultWidth = 700,
+  centered = false,
+  defaultWidth = 700,
   defaultHeight = 420,
   windowId = "",
   updateWindowPath = null,
@@ -126,17 +65,19 @@ export default function Documents({
     return currentContent.filter((item) => item.name.toLowerCase().includes(q));
   }, [currentContent, searchQuery]);
 
-  // Restore items from recycle bin for the current path.
+  // Total item count for the Documents folder (excluding Photos and Games subfolders which have their own counters).
   useEffect(() => {
     if (!currentPath.startsWith("Documents > Photos") && !currentPath.startsWith("Documents > Games")) {
       setItemCount(filteredContent.length);
     }
   }, [currentPath, filteredContent]);
 
+  // Clears selection when changing folders, so multi-select doesn’t “stick” across navigation
   useEffect(() => {
     setSelectedIds([]);
   }, [currentPath]);
 
+  // Restore items from recycle bin for the Documents path.
   useEffect(() => {
     const restores = pendingRestores?.[currentPath];
     if (!restores || restores.length === 0) return;
@@ -157,24 +98,31 @@ export default function Documents({
     if (project && !item?.isFolder) {
       const name = String(item?.name || "");
       const lower = name.toLowerCase();
+      const itemType = String(item?.type || "").toLowerCase();
 
       const openNotes = (title, content) => {
         if (typeof onOpenWindow !== "function" || typeof updateWindowPath !== "function") return;
+        // Set the notes window payload first so it doesn't briefly load `/files/untitled.txt`.
+        updateWindowPath("notes", "", { title, content: String(content ?? "") });
         onOpenWindow("notes");
-        updateWindowPath("notes", toDataTextUrl(content), { title, content });
       };
 
       const openExternalTab = (url) => {
-        const normalized = normalizeExternalUrl(url);
-        if (!normalized) return false;
-        const win = window.open(normalized, "_blank", "noopener,noreferrer");
-        if (win) return true;
-        if (typeof onOpenWindow === "function" && typeof updateWindowPath === "function") {
-          onOpenWindow("browser");
-          updateWindowPath("browser", normalized, [normalized]);
-        }
-        return false;
+        return openExternalUrl(url, {
+          onOpenInAppBrowser: (normalized) => {
+            if (typeof onOpenWindow !== "function" || typeof updateWindowPath !== "function") return;
+            onOpenWindow("browser");
+            updateWindowPath("browser", normalized, [normalized]);
+          },
+        });
       };
+
+      if (itemType === "url" || item?.url) {
+        const url = item?.url || project.links?.link || project.links?.live || project.links?.repo;
+        if (url) openExternalTab(url);
+        else openNotes(name || "URL", "No URL configured for this project.");
+        return;
+      }
 
       if (lower === "readme.txt") {
         const content = buildProjectReadme(project);

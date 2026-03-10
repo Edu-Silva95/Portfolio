@@ -247,22 +247,22 @@ export default function Taskbar({
     {
       label: "ShopListy",
       icon: "/icons/icons8-folder-94.png",
-      action: () => openDocumentsFolder("Documents > Projects > Full-stack Projects > ShopListy"),
+      action: () => openDocumentsFolder("Documents > Projects > Full-Stack Projects > ShopListy"),
     },
     {
       label: "Chefie",
       icon: "/icons/icons8-folder-94.png",
-      action: () => openDocumentsFolder("Documents > Projects > Full-stack Projects > Chefie"),
+      action: () => openDocumentsFolder("Documents > Projects > Full-Stack Projects > Chefie"),
     },
     {
       label: "Foodie",
       icon: "/icons/icons8-folder-94.png",
-      action: () => openDocumentsFolder("Documents > Projects > Full-stack Projects > Foodie"),
+      action: () => openDocumentsFolder("Documents > Projects > Full-Stack Projects > Foodie"),
     },
     {
       label: "Super Simple List",
       icon: "/icons/icons8-folder-94.png",
-      action: () => openDocumentsFolder("Documents > Projects > Full-stack Projects > Super Simple List"),
+      action: () => openDocumentsFolder("Documents > Projects > Full-Stack Projects > Super Simple List"),
     },
     { label: "This PC", icon: "🖥️", action: () => onOpenWindow("thispc") },
     { label: "MyNotes", icon: "/icons/notepad.ico", action: () => onOpenWindow("notes") },

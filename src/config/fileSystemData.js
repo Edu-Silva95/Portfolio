@@ -1,4 +1,5 @@
 import { desktopIconsData } from "./desktopIcons";
+import { getProjectById } from "../data/projectsData";
 
 const desktopContent = desktopIconsData.map((icon) => ({
   id: icon.id,
@@ -8,6 +9,28 @@ const desktopContent = desktopIconsData.map((icon) => ({
   size: icon.isFolder ? "—" : "1 KB",
   isFolder: !!icon.isFolder,
 }));
+// Project URL helper functions
+const getProjectPreferredUrl = (projectId) => {
+  const project = getProjectById(projectId);
+  const links = project?.links || {};
+  return links.link || links.live || links.repo || "";
+};
+
+const projectUrlItem = (projectId) => {
+  const project = getProjectById(projectId);
+  const url = getProjectPreferredUrl(projectId);
+  if (!url) return [];
+  return [
+    {
+      name: project?.name || "Project",
+      icon: "🌐",
+      type: "URL",
+      size: "1 KB",
+      isOpenable: true,
+      url,
+    },
+  ];
+};
 
 export const pathMap = {
   "This PC": {
@@ -54,24 +77,6 @@ export const pathMap = {
         isImage: true,
       },
       {
-        name: "Presentation.pptx",
-        icon: "📊",
-        type: "PowerPoint",
-        size: "1.2 MB",
-      },
-      {
-        name: "Report.docx",
-        icon: "/icons/notepad.ico",
-        type: "Word Document",
-        size: "89 KB",
-      },
-      {
-        name: "Budget.xlsx",
-        icon: "📈",
-        type: "Excel Spreadsheet",
-        size: "156 KB",
-      },
-      {
         name: "Games",
         icon: "/icons/icons8-folder-94.png",
         isFolder: true,
@@ -94,21 +99,26 @@ export const pathMap = {
   "This PC > Documents > Projects": {
     content: [
       {
-        name: "Course Projects",
+        name: "Full-Stack Projects",
         isFolder: true,
         icon: "/icons/icons8-folder-94.png",
       },
       {
-        name: "Full-stack Projects",
+        name: "Front-End Projects",
+        isFolder: true,
+        icon: "/icons/icons8-folder-94.png",
+      },
+      {  
+        name: "Course Projects",
         isFolder: true,
         icon: "/icons/icons8-folder-94.png",
       },
     ],
   },
-  "This PC > Documents > Projects > Course Projects": {
+  "This PC > Documents > Projects > Front-End Projects": {
     content: [
       {
-        name: "Natours",
+        name: "Portfolio",
         type: "Folder",
         isOpenable: true,
         isFolder: true,
@@ -116,7 +126,7 @@ export const pathMap = {
       },
     ],
   },
-  "This PC > Documents > Projects > Full-stack Projects": {
+  "This PC > Documents > Projects > Full-Stack Projects": {
     content: [
       {
         name: "ShopListy",
@@ -152,32 +162,55 @@ export const pathMap = {
       }
     ],
   },
-  "This PC > Documents > Projects > Full-stack Projects > ShopListy": {
+    "This PC > Documents > Projects > Course Projects": {
     content: [
-      { name: "screenshot.png", icon: "🖼️", type: "PNG Image", size: "500 KB", isOpenable: true },
-      { name: "README.txt", icon: "/icons/document.png", type: "Text Document", size: "2 KB", isOpenable: true },
-      { name: "live_demo_link.txt", icon: "/icons/document.png", type: "Text Document", size: "1 KB", isOpenable: true },
+      {
+        name: "Natours",
+        type: "Folder",
+        isOpenable: true,
+        isFolder: true,
+        icon: "/icons/icons8-folder-94.png",
+      },
     ],
   },
-  "This PC > Documents > Projects > Full-stack Projects > Chefie": {
+  // Full-stack projects with a custom icon and an image file in each folder.
+  "This PC > Documents > Projects > Full-Stack Projects > ShopListy": {
     content: [
       { name: "screenshot.png", icon: "🖼️", type: "PNG Image", size: "500 KB", isOpenable: true },
       { name: "README.txt", icon: "/icons/document.png", type: "Text Document", size: "2 KB", isOpenable: true },
       { name: "live_demo_link.txt", icon: "/icons/document.png", type: "Text Document", size: "1 KB", isOpenable: true },
+      ...projectUrlItem("shoplisty"),
     ],
   },
-  "This PC > Documents > Projects > Full-stack Projects > Foodie": {
+  "This PC > Documents > Projects > Full-Stack Projects > Chefie": {
     content: [
       { name: "screenshot.png", icon: "🖼️", type: "PNG Image", size: "500 KB", isOpenable: true },
       { name: "README.txt", icon: "/icons/document.png", type: "Text Document", size: "2 KB", isOpenable: true },
       { name: "live_demo_link.txt", icon: "/icons/document.png", type: "Text Document", size: "1 KB", isOpenable: true },
+      ...projectUrlItem("chefie"),
     ],
   },
-  "This PC > Documents > Projects > Full-stack Projects > Super Simple List": {
+  "This PC > Documents > Projects > Full-Stack Projects > Foodie": {
     content: [
       { name: "screenshot.png", icon: "🖼️", type: "PNG Image", size: "500 KB", isOpenable: true },
       { name: "README.txt", icon: "/icons/document.png", type: "Text Document", size: "2 KB", isOpenable: true },
       { name: "live_demo_link.txt", icon: "/icons/document.png", type: "Text Document", size: "1 KB", isOpenable: true },
+      ...projectUrlItem("foodie"),
+    ],
+  },
+  "This PC > Documents > Projects > Full-Stack Projects > Super Simple List": {
+    content: [
+      { name: "screenshot.png", icon: "🖼️", type: "PNG Image", size: "500 KB", isOpenable: true },
+      { name: "README.txt", icon: "/icons/document.png", type: "Text Document", size: "2 KB", isOpenable: true },
+      { name: "live_demo_link.txt", icon: "/icons/document.png", type: "Text Document", size: "1 KB", isOpenable: true },
+      ...projectUrlItem("super-simple-list"),
+    ],
+  },
+  // Front-end projects with a custom icon and an image file.
+  "This PC > Documents > Projects > Front-End Projects > Portfolio": {
+    content: [
+      { name: "README.txt", icon: "/icons/document.png", type: "Text Document", size: "2 KB", isOpenable: true },
+      ...projectUrlItem("portfolio"),
     ],
   },
   "This PC > Documents > Photos": {
