@@ -108,13 +108,10 @@ export default function Documents({
       };
 
       const openExternalTab = (url) => {
-        return openExternalUrl(url, {
-          onOpenInAppBrowser: (normalized) => {
-            if (typeof onOpenWindow !== "function" || typeof updateWindowPath !== "function") return;
-            onOpenWindow("browser");
-            updateWindowPath("browser", normalized, [normalized]);
-          },
-        });
+        // Some browsers may return `null` from `window.open` even when the tab opens (notably with `noopener`).
+        // We only want to trigger a real browser tab here and never fall back to the in-app browser.
+        openExternalUrl(url, { preferNewTab: true });
+        return true;
       };
 
       if (itemType === "url" || item?.url) {

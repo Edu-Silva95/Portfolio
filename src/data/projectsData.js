@@ -11,7 +11,7 @@ export const projectsData = [
       "The backend was built with Ruby on Rails and PostgreSQL, providing structured data persistence and secure user authentication.",
       "The frontend uses HTML, SCSS, and JavaScript to deliver a simple and responsive user interface.",
     ],
-    tech: ["Ruby on Rails", "PostgreSQL", "JavaScript", "SCSS", "Fly.io"],
+    tech: ["Ruby on Rails", "PostgreSQL", "JavaScript", "SCSS", "Fly.io", "Hotwire (Turbo + Stimulus)", "Devise"],
     features: [
       "User account registration and authentication",
       "Map showing the 5 closest supermarkets based on the user's location",
@@ -47,12 +47,32 @@ export const projectsData = [
     tagline: "Recipe sharing platform",
     role: "Full-stack developer (solo project)",
     description:
-      "This is my second solo project as a junior developer, created to try and use cleaner code I learnt from the courses I attended. Designed and coded by me. It's a recipe web-site where people can create an account, share recipes, share videos/courses teaching recipes. Many features included, here are a few: Create Account, change password, delete account. Like functionality. Comment functionality. Share recipes and video/courses which can also be deleted by the user that made the post. Report functionality. Change the user picture. Feed system. Topics/Discussions. Favorite fucntionality. Search functionality",
-    tech: ["Ruby on Rails", "SCSS", "PostgreSQL", "JavaScript"],
+      "Chefie is a full-stack recipe sharing platform where users can create, discover, and interact with recipes, courses, and community discussions. The project focuses on building a scalable social-style application using Rails, including authentication, content creation, and real-time UI updates with Hotwire. A key challenge was implementing persistent media storage using Cloudflare R2 to handle Fly.io’s ephemeral filesystem.",
+    tech: [ "Ruby on Rails 7", "PostgreSQL", "Hotwire (Turbo + Stimulus)", "SCSS", "Active Storage", "Cloudflare R2 (S3-compatible)", "Fly.io"],
+    features: [
+      "Authentication & account management (Devise)",
+      "Recipe system: create, browse, search, categorize, and rate recipes",
+      "Favorites system with personalized user collections",
+      "User-generated content: posts, courses (YouTube), and discussions",
+      "Social interactions: likes (posts/courses/replies) and comments",
+      "Communities: topics, threaded replies, and search",
+      "Pagination and search across multiple resources",
+      "Image uploads for avatars and recipes via Active Storage"
+    ],
+    highlights: [
+      "Designed and built a full-stack social platform with Rails 7, modeling complex relationships (users, recipes, posts, communities, and interactions)",
+      "Implemented cloud-based image storage using Cloudflare R2 to handle Fly.io’s ephemeral filesystem constraints",
+      "Built scalable search and pagination across multiple resources using Kaminari",
+      "Developed polymorphic associations for likes and interactions across different models",
+      "Integrated Hotwire (Turbo/Stimulus) for dynamic UI updates without heavy frontend frameworks",
+      "Handled production deployment challenges including background jobs, asset precompilation, and external storage integration",
+      "Structured a modular Rails codebase with clean separation of concerns and reusable components"
+    ],
     folderPath: "This PC > Documents > Projects > Full-Stack Projects > Chefie",
     links: {
       live: "",
       repo: "https://github.com/Edu-Silva95/Chefie",
+      link: "https://chefie-dry-sound-571.fly.dev/",
     },
     screenshots: [],
   },

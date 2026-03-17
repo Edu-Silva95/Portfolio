@@ -75,15 +75,11 @@ export default function ThisPC({ onClose, onMinimize, onOpenWindow = () => { }, 
         updateWindowPath("notes", "", { title, content: String(content ?? "") });
         onOpenWindow("notes");
       };
-
+      
+      // Open tab for the projects
       const openExternalTab = (url) => {
-        return openExternalUrl(url, {
-          onOpenInAppBrowser: (normalized) => {
-            if (typeof onOpenWindow !== "function" || typeof updateWindowPath !== "function") return;
-            onOpenWindow("browser");
-            updateWindowPath("browser", normalized, [normalized]);
-          },
-        });
+        openExternalUrl(url, { preferNewTab: true });
+        return true;
       };
 
       if (itemType === "url" || item?.url) {
