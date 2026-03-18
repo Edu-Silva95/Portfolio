@@ -15,7 +15,7 @@ export default function AboutWindow({
   onMoveToRecycleBin = null,
   onCreateDesktopShortcut = null,
   closing = false,
-  initialPath = "This PC > Desktop > About",
+  initialPath = "This PC > Desktop > Project Info",
 }) {
   const { currentPath, pushPath, handleBack, handleForward, canGoBack, canGoForward } = useFolderNavigation({
     initialPath,
@@ -36,7 +36,7 @@ export default function AboutWindow({
   const [searchQuery, setSearchQuery] = useState("");
 
   const thisPcPath = "This PC";
-  const aboutPath = "This PC > Desktop > About";
+  const aboutPath = "This PC > Desktop > Project Info";
   const desktopPath = "This PC > Desktop";
 
   const currentItems = fileTree[currentPath]?.content || [];
@@ -133,7 +133,7 @@ export default function AboutWindow({
       pushPath(desktopPath);
       return;
     }
-    if (currentPath === desktopPath && item.name === "About") {
+    if (currentPath === desktopPath && item.name === "Project Info") {
       pushPath(aboutPath);
       setSelectedIds([]);
       return;
@@ -145,7 +145,7 @@ export default function AboutWindow({
 
   return (
     <>
-      <Window title="📂 About" onClose={onClose} onMinimize={onMinimize} closing={closing} hideScrollbar>
+      <Window title="📂 Project Info" onClose={onClose} onMinimize={onMinimize} closing={closing} hideScrollbar>
         <div className="flex flex-col h-full">
         <FolderToolbar
           onBack={handleBack}

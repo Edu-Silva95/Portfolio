@@ -8,11 +8,11 @@ export function FileSystemProvider({ children }) {
   const [fileTree, setFileTree] = useState(() => {
     const tree = JSON.parse(JSON.stringify(initialPathMap || {}));
 
-    // Ensure Desktop has an 'About' folder entry (used by About folder)
+    // Ensure Desktop has a 'Project Info' folder entry (used by About window)
     const desktopKey = "This PC > Desktop";
-    const aboutFolder = { id: "about-folder", name: "About", icon: "/icons/icons8-folder-94.png", type: "Folder", size: "—", isFolder: true };
+    const aboutFolder = { id: "about-folder", name: "Project Info", icon: "/icons/icons8-folder-94.png", type: "Folder", size: "—", isFolder: true };
     if (!tree[desktopKey]) tree[desktopKey] = { content: [aboutFolder] };
-    else if (!Array.isArray(tree[desktopKey].content) || !tree[desktopKey].content.some((it) => it.name === "About")) {
+    else if (!Array.isArray(tree[desktopKey].content) || !tree[desktopKey].content.some((it) => it.name === "Project Info")) {
       tree[desktopKey].content = [aboutFolder, ...(tree[desktopKey].content || [])];
     }
 
@@ -39,8 +39,8 @@ export function FileSystemProvider({ children }) {
       });
     }
 
-    // Ensure Desktop > About has the Readme file
-    const aboutReadmeKey = "This PC > Desktop > About";
+    // Ensure Desktop > Project Info has the Readme file
+    const aboutReadmeKey = "This PC > Desktop > Project Info";
     const readme = { id: "readme-file", name: "Readme.txt", icon: "/icons/document.png", type: "Text Document", size: "1 KB", isOpenable: true };
     if (!tree[aboutReadmeKey]) tree[aboutReadmeKey] = { content: [readme] };
     else if (!Array.isArray(tree[aboutReadmeKey].content) || !tree[aboutReadmeKey].content.some((it) => it.name === "Readme.txt")) {
@@ -57,7 +57,6 @@ export function FileSystemProvider({ children }) {
 
     return tree;
   });
-  
 
   // Desktop helpers operate on `This PC > Desktop` content inside fileTree
   const getDesktopIcons = () => {
@@ -188,4 +187,3 @@ export function FileSystemProvider({ children }) {
 export function useFileSystem() {
   return useContext(FileSystemContext);
 }
-

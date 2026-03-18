@@ -8,6 +8,7 @@ const desktopContent = desktopIconsData.map((icon) => ({
   type: icon.isFolder ? "Folder" : "Shortcut",
   size: icon.isFolder ? "—" : "1 KB",
   isFolder: !!icon.isFolder,
+  isOpenable: true,
 }));
 // Project URL helper functions
 const getProjectPreferredUrl = (projectId) => {
