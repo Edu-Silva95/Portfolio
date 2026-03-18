@@ -103,7 +103,7 @@ const FileTable = ({ items = [], onItemClick, onItemDoubleClick, viewMode = "lis
           {items.map((item) => {
             const itemKey = item.id ?? item.name;
             const isSelected = selectedIds.includes(itemKey);
-            const interactive = item.path || item.isFolder || item.isOpenable || item.name === "Curriculum Vitae.pdf";
+            const interactive = item.path || item.isFolder || item.isOpenable || item.name === "Curriculum_Vitae_2026.pdf";
             return (
               <button
                 key={itemKey}
@@ -122,7 +122,9 @@ const FileTable = ({ items = [], onItemClick, onItemDoubleClick, viewMode = "lis
                 ) : (
                   <span className="text-3xl">{item.icon}</span>
                 )}
-                <span className="text-xs text-white/90 line-clamp-2">{item.name}</span>
+                <span className="text-xs text-white/90 line-clamp-2 break-words max-w-full" title={item.name}>
+                  {item.name}
+                </span>
                 {actions && (
                   <div className="mt-1 flex gap-1 text-xs">
                     {actions(item)}
@@ -171,7 +173,7 @@ const FileTable = ({ items = [], onItemClick, onItemDoubleClick, viewMode = "lis
                   onItemDoubleClick && onItemDoubleClick(item);
                 }}
               onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onItemContextMenu && onItemContextMenu(item, e); }}
-              className={`${item.path || item.isFolder || item.isOpenable || item.name === "Curriculum Vitae.pdf" ? "cursor-pointer hover:bg-white/5" : "cursor-default"} ${selectedIds.includes(item.id ?? item.name) ? "bg-[#66a6ff]/15" : ""} border-b border-white/5 transition`}
+              className={`${item.path || item.isFolder || item.isOpenable || item.name === "Curriculum_Vitae_2026.pdf" ? "cursor-pointer hover:bg-white/5" : "cursor-default"} ${selectedIds.includes(item.id ?? item.name) ? "bg-[#66a6ff]/15" : ""} border-b border-white/5 transition`}
             >
               <td className="py-2 flex items-center gap-2">
                 {item.isImage || (typeof item.icon === "string" && item.icon.includes("/")) ? (

@@ -113,7 +113,7 @@ export default function ThisPC({ onClose, onMinimize, onOpenWindow = () => { }, 
     }
 
     // Open CV PDF file
-    if (item.name === "Curriculum Vitae.pdf") {
+    if (item.name === "Curriculum_Vitae_2026.pdf") {
       onOpenWindow("cv");
       return;
     }

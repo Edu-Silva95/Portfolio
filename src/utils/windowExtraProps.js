@@ -37,8 +37,8 @@ export function buildWindowExtraProps({
   }
 
   if (id === "cv") {
-    extraProps.filePath = "/files/Curriculum Vitae Portugues.pdf";
-    extraProps.title = "Curriculum Vitae Portugues.pdf";
+    extraProps.filePath = "/files/Curriculum_Vitae_2026.pdf";
+    extraProps.title = "Curriculum_Vitae_2026.pdf";
     extraProps.centered = true;
     extraProps.defaultWidth = 900;
     extraProps.defaultHeight = 600;

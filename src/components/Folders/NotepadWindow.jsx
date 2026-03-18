@@ -416,7 +416,7 @@ export default function NotepadWindow({
           value={text}
           onChange={handleTextChange}
           onKeyDown={handleTextareaKeyDown}
-          className={`flex-1 bg-gray-950 p-4 text-sm text-white focus:outline-none resize-none w-full h-full font-mono ${
+          className={`flex-1 bg-white p-4 text-sm text-black focus:outline-none resize-none w-full h-full font-mono ${
             wordWrap ? "break-words" : "whitespace-pre overflow-x-auto"
           }`}
           spellCheck="false"

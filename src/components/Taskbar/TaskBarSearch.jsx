@@ -33,7 +33,7 @@ export default function TaskBarSearch({ onOpenWindow = () => { }, onClearSelecti
     {
       title: "Suggested",
       items: [
-        { label: "Curriculum Vitae.pdf", icon: "/icons/pdf-file-format.ico", windowId: "cv" },
+        { label: "Curriculum_Vitae_2026.pdf", icon: "/icons/pdf-file-format.ico", windowId: "cv" },
         { label: "Projects", icon: "/icons/icons8-folder-94.png", windowId: "projects" },
         { label: "Browser", icon: "/icons/chrome.png", windowId: "browser" },
         { label: "MyNotes", icon: "/icons/notepad.ico", windowId: "notes" },
@@ -228,7 +228,9 @@ export default function TaskBarSearch({ onOpenWindow = () => { }, onClearSelecti
       className="h-20 hover:bg-white/15 bg-gray-700/30 rounded-xl border border-white/10 transition flex flex-col items-center justify-center gap-1 text-xs text-white/90 cursor-pointer"
     >
       {renderItemIcon(item, "w-7 h-7", "text-2xl")}
-      <span className="px-1 text-center leading-tight line-clamp-2">{item.label}</span>
+      <span className="px-1 text-center leading-tight line-clamp-2 break-words max-w-full" title={item.label}>
+        {item.label}
+      </span>
     </button>
   );
 

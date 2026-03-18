@@ -70,7 +70,7 @@ export const pathMap = {
   "This PC > Documents": {
     content: [
       {
-        name: "Curriculum Vitae.pdf",
+        name: "Curriculum_Vitae_2026.pdf",
         icon: "/icons/pdf-file-format.ico",
         type: "PDF Document",
         size: "245 KB",

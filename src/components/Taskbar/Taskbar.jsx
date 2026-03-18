@@ -274,7 +274,7 @@ export default function Taskbar({
 
   const recommendedItems = [
     { label: "Documents", icon: "/icons/icons8-folder-94.png", action: () => onOpenWindow("documents") },
-    { label: "Curriculum Vitae.pdf", icon: "/icons/pdf-file-format.ico", action: () => onOpenWindow("cv") },
+    { label: "Curriculum_Vitae_2026.pdf", icon: "/icons/pdf-file-format.ico", action: () => onOpenWindow("cv") },
     { label: "Projects", icon: "/icons/icons8-folder-94.png", action: () => onOpenWindow("projects") },
     { label: "About", icon: "/icons/icons8-folder-94.png", action: () => onOpenWindow("about") },
   ];
@@ -337,7 +337,12 @@ export default function Taskbar({
                                      flex flex-col items-center justify-center gap-1 text-sm cursor-pointer"
                         >
                           {renderMenuIcon(item, "w-8 h-8", "text-3xl")}
-                          <span className="text-[11px] text-white/90 text-center leading-tight px-0.5 line-clamp-2">{item.label}</span>
+                          <span
+                            className="text-[11px] text-white/90 text-center leading-tight px-0.5 line-clamp-2 break-words max-w-full"
+                            title={item.label}
+                          >
+                            {item.label}
+                          </span>
                         </button>
                       ))}
                     </div>
@@ -359,7 +364,9 @@ export default function Taskbar({
                                        transition rounded-lg px-3 py-2 text-left cursor-pointer flex items-center gap-2"
                           >
                             {item.icon && renderMenuIcon(item, "w-6 h-6 mr-2", "text-3xl")}
-                            {item.label}
+                            <span className="min-w-0 flex-1 truncate" title={item.label}>
+                              {item.label}
+                            </span>
                           </button>
                         </li>
                       ))}

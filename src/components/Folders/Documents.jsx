@@ -147,7 +147,7 @@ export default function Documents({
     if (item.isFolder) {
       const newPath = `${currentPath} > ${item.name}`;
       pushPath(newPath);
-    } else if (item.name === "Curriculum Vitae.pdf") {
+    } else if (item.name === "Curriculum_Vitae_2026.pdf") {
       // Open CV file
       onOpenWindow("cv");
     }
