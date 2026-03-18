@@ -2,13 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import FileTable from "./FileTable";
 import { useFileSystem } from "../../context/FileSystemContext";
 
-// List of games shown in this folder.
-const gamesContent = [
-  { name: "Dino Game", icon: "🦖", type: "Game", size: "988 KB", isFolder: false, isOpenable: true },
-  { name: "Pinball", icon: "🎱", type: "Game", size: "—", isFolder: false, isOpenable: true },
-  { name: "DOOM", icon: "/icons/doom.png", type: "Game", size: "—", isFolder: false, isOpenable: true }
-];
-
 export function GamesContent({ basePath = "This PC > Games", searchQuery = "", viewMode = "list", onCountChange, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, onOpenWindow = null, selectedIds: selectedIdsProp = null, onSelectionChange = null }) {
   const { fileTree, setFileTree, handleContextMenu } = useFileSystem();
   const [localSelectedIds, setLocalSelectedIds] = useState([]);

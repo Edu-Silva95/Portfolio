@@ -49,7 +49,7 @@ export function FileSystemProvider({ children }) {
 
     // Ensure Games folder under Documents contains DOOM
     const docsGamesKey = "This PC > Documents > Games";
-    const doomItem = { name: "DOOM", icon: "/icons/doom.png", type: "Game", size: "—", isFolder: false, isOpenable: true };
+    const doomItem = { name: "DOOM", icon: "/icons/doom.png", type: "Application", size: "2.39 MB", isFolder: false, isOpenable: true };
     if (!tree[docsGamesKey]) tree[docsGamesKey] = { content: [doomItem] };
     else if (!Array.isArray(tree[docsGamesKey].content) || !tree[docsGamesKey].content.some((it) => it.name === "DOOM")) {
       tree[docsGamesKey].content = [...(tree[docsGamesKey].content || []), doomItem];

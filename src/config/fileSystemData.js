@@ -36,17 +36,18 @@ const projectUrlItem = (projectId) => {
 export const pathMap = {
   "This PC": {
     folders: [
-      { name: "Desktop", icon: "🖥️", isFolder: true, size: "—" },
+      { name: "Desktop", icon: "🖥️", isFolder: true, size: "1.2 MB", type: "System Folder" },
       {
         name: "Documents",
         icon: "/icons/icons8-folder-94.png",
         isFolder: true,
-        size: "—",
+        size: "6 GB",
+        type: "Folder",
       },
-      { name: "Downloads", icon: "⬇️", isFolder: true, size: "—" },
-      { name: "Pictures", icon: "🖼️", isFolder: true, size: "—" },
-      { name: "Music", icon: "🎵", isFolder: true, size: "—" },
-      { name: "Videos", icon: "🎬", isFolder: true, size: "—" },
+      { name: "Downloads", icon: "⬇️", isFolder: true, size: "301 MB", type: "System Folder" },
+      { name: "Pictures", icon: "🖼️", isFolder: true, size: "15 MB", type: "System Folder" },
+      { name: "Music", icon: "🎵", isFolder: true, size: "20 MB" , type: "System Folder"},
+      { name: "Videos", icon: "🎬", isFolder: true, size: "357 MB" , type: "System Folder"},
     ],
     drives: [
       {
@@ -103,16 +104,22 @@ export const pathMap = {
         name: "Full-Stack Projects",
         isFolder: true,
         icon: "/icons/icons8-folder-94.png",
+        size: "3.9 GB",
+        type: "Folder",
       },
       {
         name: "Front-End Projects",
         isFolder: true,
         icon: "/icons/icons8-folder-94.png",
+        size: "125 MB",
+        type: "Folder",
       },
       {  
         name: "Course Projects",
         isFolder: true,
         icon: "/icons/icons8-folder-94.png",
+        size: "345 MB",
+        type: "Folder",
       },
     ],
   },
@@ -136,6 +143,8 @@ export const pathMap = {
         isProject: true, 
         projectId: "shoplisty",
         icon: "/icons/icons8-folder-94.png",
+        type: "Folder",
+        size: "1.8 GB",
       },
       {
         name: "Chefie",
@@ -144,6 +153,8 @@ export const pathMap = {
         projectId: "chefie",
         isOpenable: true,
         icon: "/icons/icons8-folder-94.png",
+        type: "Folder",
+        size: "890 MB",
       },
       {
         name: "Foodie",
@@ -152,6 +163,8 @@ export const pathMap = {
         projectId: "foodie",
         isOpenable: true,
         icon: "/icons/icons8-folder-94.png",
+        type: "Folder",
+        size: "674 MB",
       },
       {
         name: "Super Simple List",
@@ -160,6 +173,8 @@ export const pathMap = {
         projectId: "super-simple-list",
         isOpenable: true,
         icon: "/icons/icons8-folder-94.png",
+        type: "Folder",
+        size: "512 MB",
       }
     ],
   },
@@ -171,6 +186,7 @@ export const pathMap = {
         isOpenable: true,
         isFolder: true,
         icon: "/icons/icons8-folder-94.png",
+        size: "345 MB",
       },
     ],
   },
@@ -250,7 +266,7 @@ export const pathMap = {
   },
   "This PC > Documents > Games": {
     content: [
-      { name: "Dino Game", icon: "🦖", type: "Application", size: "145 MB", isOpenable: true },
+      { name: "Dino Game", icon: "🦖", type: "Application", size: "1.5 MB", isOpenable: true },
       { name: "Pinball", icon: "🎱", type: "Application", size: "234 MB", isOpenable: true },
     ],
   },
