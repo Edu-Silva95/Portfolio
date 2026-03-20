@@ -10,6 +10,7 @@ const desktopContent = desktopIconsData.map((icon) => ({
   isFolder: !!icon.isFolder,
   isOpenable: true,
 }));
+
 // Project URL helper functions
 const getProjectPreferredUrl = (projectId) => {
   const project = getProjectById(projectId);
@@ -24,7 +25,7 @@ const projectUrlItem = (projectId) => {
   return [
     {
       name: project?.name || "Project",
-      icon: "🌐",
+      icon: "/icons/url.png",
       type: "URL",
       size: "1 KB",
       isOpenable: true,
@@ -193,40 +194,40 @@ export const pathMap = {
   // Full-stack projects with a custom icon and an image file in each folder.
   "This PC > Documents > Projects > Full-Stack Projects > ShopListy": {
     content: [
-      { name: "screenshot.png", icon: "🖼️", type: "PNG Image", size: "500 KB", isOpenable: true },
-      { name: "README.txt", icon: "/icons/document.png", type: "Text Document", size: "2 KB", isOpenable: true },
-      { name: "live_demo_link.txt", icon: "/icons/document.png", type: "Text Document", size: "1 KB", isOpenable: true },
+      { name: "screenshot.png", icon: "/icons/image.png", type: "PNG Image", size: "500 KB", isOpenable: true },
+      { name: "README.txt", icon: "/icons/document.png", type: "Text Document", size: "5 MB", isOpenable: true },
+      { name: "ShopListy_Live_Demo.mp4", icon: "/icons/youtube.png", type: "Video", size: "1 KB", isOpenable: true },
       ...projectUrlItem("shoplisty"),
     ],
   },
   "This PC > Documents > Projects > Full-Stack Projects > Chefie": {
     content: [
-      { name: "screenshot.png", icon: "🖼️", type: "PNG Image", size: "500 KB", isOpenable: true },
-      { name: "README.txt", icon: "/icons/document.png", type: "Text Document", size: "2 KB", isOpenable: true },
-      { name: "live_demo_link.txt", icon: "/icons/document.png", type: "Text Document", size: "1 KB", isOpenable: true },
+      { name: "screenshot.png", icon: "/icons/image.png", type: "PNG Image", size: "15 MB", isOpenable: true },
+      { name: "README.txt", icon: "/icons/document.png", type: "Text Document", size: "5 MB", isOpenable: true },
+      { name: "Chefie_Live_Demo.mp4", icon: "/icons/youtube.png", type: "Video", size: "1.2 GB", isOpenable: true },
       ...projectUrlItem("chefie"),
     ],
   },
   "This PC > Documents > Projects > Full-Stack Projects > Foodie": {
     content: [
-      { name: "screenshot.png", icon: "🖼️", type: "PNG Image", size: "500 KB", isOpenable: true },
-      { name: "README.txt", icon: "/icons/document.png", type: "Text Document", size: "2 KB", isOpenable: true },
-      { name: "live_demo_link.txt", icon: "/icons/document.png", type: "Text Document", size: "1 KB", isOpenable: true },
+      { name: "screenshot.png", icon: "/icons/image.png", type: "PNG Image", size: "15 MB", isOpenable: true },
+      { name: "README.txt", icon: "/icons/document.png", type: "Text Document", size: "3 MB", isOpenable: true },
+      { name: "Foodie_Live_Demo.mp4", icon: "/icons/youtube.png", type: "Video", size: "1 GB", isOpenable: true },
       ...projectUrlItem("foodie"),
     ],
   },
   "This PC > Documents > Projects > Full-Stack Projects > Super Simple List": {
     content: [
-      { name: "screenshot.png", icon: "🖼️", type: "PNG Image", size: "500 KB", isOpenable: true },
-      { name: "README.txt", icon: "/icons/document.png", type: "Text Document", size: "2 KB", isOpenable: true },
-      { name: "live_demo_link.txt", icon: "/icons/document.png", type: "Text Document", size: "1 KB", isOpenable: true },
+      { name: "screenshot.png", icon: "/icons/image.png", type: "PNG Image", size: "500 KB", isOpenable: true },
+      { name: "README.txt", icon: "/icons/document.png", type: "Text Document", size: "3 MB", isOpenable: true },
+      { name: "Super Simple List_Live_Demo.mp4", icon: "/icons/youtube.png", type: "Video", size: "874 MB", isOpenable: true },
       ...projectUrlItem("super-simple-list"),
     ],
   },
   // Front-end projects with a custom icon and an image file.
   "This PC > Documents > Projects > Front-End Projects > Portfolio": {
     content: [
-      { name: "README.txt", icon: "/icons/document.png", type: "Text Document", size: "2 KB", isOpenable: true },
+      { name: "README.txt", icon: "/icons/document.png", type: "Text Document", size: "4 MB", isOpenable: true },
       ...projectUrlItem("portfolio"),
     ],
   },

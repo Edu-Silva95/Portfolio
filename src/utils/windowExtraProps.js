@@ -141,6 +141,20 @@ export function buildWindowExtraProps({
     }
   }
 
+  if (id === "youtube") {
+    extraProps.centered = true;
+    extraProps.defaultWidth = 900;
+    extraProps.defaultHeight = 550;
+
+    if (typeof win?.currentPath === "string" && win.currentPath.trim()) {
+      extraProps.videoUrl = win.currentPath;
+    }
+    if (win?.navigationHistory && typeof win.navigationHistory === "object") {
+      extraProps.title = win.navigationHistory.title || extraProps.title;
+      extraProps.videoId = win.navigationHistory.videoId || extraProps.videoId;
+    }
+  }
+
   if (id === "localdisc_c") {
     extraProps.title = "Local Disk (C:)";
     extraProps.centered = true;

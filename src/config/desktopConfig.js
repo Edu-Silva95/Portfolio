@@ -7,6 +7,7 @@ import Documents from "../components/Folders/Documents";
 import ThisPC from "../components/Folders/ThisPC";
 import DinoWindow from "../components/ChromeDino/ChromeDino";
 import Browser from "../components/Browser/Browser";
+import YouTubeWindow from "../components/folder_styles/YoutubePlayer";
 import { desktopIconsData } from "./desktopIcons";
 
 export const windowsConfig = {
@@ -23,6 +24,7 @@ export const windowsConfig = {
   photos: ThisPC,
   games: Documents,
   browser: Browser,
+  youtube: YouTubeWindow,
 };
 
 export const initialIcons = desktopIconsData.map((icon, idx) => ({
@@ -45,3 +47,4 @@ windowIcons.notes = "/icons/notepad.ico";
 windowIcons.readme = "/icons/notepad.ico";
 windowIcons.cv = "/icons/pdf-file-format.ico";
 windowIcons.dino = "🦖";
+windowIcons.youtube = "🎬";

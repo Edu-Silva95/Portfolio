@@ -11,6 +11,7 @@ import { GamesContent } from "./Games";
 import { getProjectByFolderPath } from "../../data/projectsData";
 import { buildProjectReadme } from "../../utils/projectsReadme";
 import { openExternalUrl } from "../../utils/externalUrl";
+import { parseYouTubeVideoId } from "../../utils/youtube";
 
 export default function ThisPC({ onClose, onMinimize, onOpenWindow = () => { }, initialPath = "This PC", centered = false, defaultWidth = 700, defaultHeight = 420, windowId = "", updateWindowPath = null, savedPath = null, savedHistory = null, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, openableIds = [], closing = false }) {
   const { currentPath, pushPath, handleBack, handleForward, canGoBack, canGoForward } = useFolderNavigation({
@@ -95,12 +96,25 @@ export default function ThisPC({ onClose, onMinimize, onOpenWindow = () => { }, 
         return;
       }
 
-      if (lower === "live_demo_link.txt") {
-        if (project.links?.live) {
-          openExternalTab(project.links.live);
-        } else {
-          openNotes("live_demo_link.txt", "No live demo link configured for this project.");
+      const isLiveDemoVideoFile = /_live_demo\.mp4$/i.test(name.trim());
+
+      if (lower === "live_demo_link.txt" || isLiveDemoVideoFile) {
+        const candidate = project.demoYoutubeUrl || project.demoYoutubeId || project.links?.youtube || project.links?.live;
+        const youtubeId = parseYouTubeVideoId(candidate);
+
+        if (youtubeId && typeof onOpenWindow === "function" && typeof updateWindowPath === "function") {
+          updateWindowPath("youtube", String(candidate || youtubeId), { title: `${project.name || "Project"} Demo`, videoId: youtubeId });
+          onOpenWindow("youtube");
+          return;
         }
+
+        const live = project.links?.live;
+        if (live) {
+          openExternalTab(live);
+          return;
+        }
+
+        openNotes(name || "Live demo", "No YouTube demo configured for this project.");
         return;
       }
 
