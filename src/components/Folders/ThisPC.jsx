@@ -59,6 +59,17 @@ export default function ThisPC({ onClose, onMinimize, minimized = false, minimiz
 
   // Open windows or drill into folders from the list.
   const handleItemDoubleClick = (item) => {
+    if (!item?.isFolder) {
+      const itemType = String(item?.type || "").toLowerCase();
+      if (itemType === "url" || item?.url) {
+        const url = item?.url;
+        if (url) {
+          openExternalUrl(url, { preferNewTab: true });
+          return;
+        }
+      }
+    }
+
     if (item?.id && openableIds.includes(item.id)) {
       onOpenWindow(item.id);
       return;

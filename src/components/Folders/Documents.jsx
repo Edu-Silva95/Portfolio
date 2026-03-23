@@ -96,6 +96,17 @@ export default function Documents({
 
   // Open folders or special files from the list.
   const handleItemDoubleClick = (item) => {
+    if (!item?.isFolder) {
+      const itemType = String(item?.type || "").toLowerCase();
+      if (itemType === "url" || item?.url) {
+        const url = item?.url;
+        if (url) {
+          openExternalUrl(url, { preferNewTab: true });
+          return;
+        }
+      }
+    }
+
     // If we're inside a project folder, allow opening its virtual files.
     const project = getProjectByFolderPath(globalPath);
     if (project && !item?.isFolder) {
