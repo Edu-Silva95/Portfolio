@@ -262,7 +262,7 @@ export default function TaskBarSearch({ onOpenWindow = () => { }, onClearSelecti
         <div
           id="taskbar-search-panel"
           ref={panelRef}
-          className={`absolute bottom-14 left-0 w-[700px] h-[800px] max-h-[80vh] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden bg-gray-800 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-4 mb-0.5 transition-all duration-300 ease-out ${isPanelVisible ? "translate-y-0 opacity-100" : isPanelOpen ? "translate-y-24 opacity-0 pointer-events-none" : "translate-y-4 opacity-0 pointer-events-none"}`}
+          className={`absolute bottom-14 left-0 w-[700px] h-[650px] overflow-hidden bg-gray-800 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-4 mb-0.5 transition-all duration-300 ease-out ${isPanelVisible ? "translate-y-0 opacity-100" : isPanelOpen ? "translate-y-24 opacity-0 pointer-events-none" : "translate-y-4 opacity-0 pointer-events-none"}`}
         >
           {/* Two-column content: Recent + News (left), Suggested + Games (right). */}
           <div className="grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-10">

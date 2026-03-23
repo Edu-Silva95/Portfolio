@@ -22,6 +22,7 @@ export function FileSystemProvider({ children }) {
       tree[desktopKey].content = tree[desktopKey].content.map((c, i) => {
         const match = byId[c.id] || byId[c.name];
           if (match) {
+            const isFolder = !!(c.isFolder || match.isFolder);
             return {
               id: c.id || match.id || `icon-${i}`,
               name: c.name || match.label || c.label,
@@ -29,13 +30,32 @@ export function FileSystemProvider({ children }) {
               icon: c.icon || match.icon,
               x: match.x,
               y: match.y,
-              isFolder: !!(c.isFolder || match.isFolder),
+              isFolder,
               isShortcut: !!match.isShortcut,
               targetId: c.targetId || match.targetId,
+              type: c.type ?? (isFolder ? "File folder" : "Shortcut"),
+              size: c.size ?? (isFolder ? "—" : "1 KB"),
+              isOpenable: c.isOpenable ?? true,
+              url: c.url,
             };
           }
         // fallback: assign a simple stacked position
-        return { id: c.id || `icon-${i}`, name: c.name || c.label, label: c.name || c.label, icon: c.icon, x: 1, y: 1 + i * 96, isFolder: !!c.isFolder, isShortcut: !!c.isShortcut, targetId: c.targetId };
+        const isFolder = !!c.isFolder;
+        return {
+          id: c.id || `icon-${i}`,
+          name: c.name || c.label,
+          label: c.name || c.label,
+          icon: c.icon,
+          x: 1,
+          y: 1 + i * 96,
+          isFolder,
+          isShortcut: !!c.isShortcut,
+          targetId: c.targetId,
+          type: c.type ?? (isFolder ? "File folder" : "Shortcut"),
+          size: c.size ?? (isFolder ? "—" : "1 KB"),
+          isOpenable: c.isOpenable ?? true,
+          url: c.url,
+        };
       });
     }
 

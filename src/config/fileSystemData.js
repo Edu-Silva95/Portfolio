@@ -1,15 +1,22 @@
 import { desktopIconsData } from "./desktopIcons";
 import { getProjectById } from "../data/projectsData";
 
-const desktopContent = desktopIconsData.map((icon) => ({
-  id: icon.id,
-  name: icon.label,
-  icon: icon.icon,
-  type: icon.isFolder ? "Folder" : "Shortcut",
-  size: icon.isFolder ? "—" : "1 KB",
-  isFolder: !!icon.isFolder,
-  isOpenable: true,
-}));
+const desktopContent = desktopIconsData.map((icon) => {
+  const isFolder = !!icon.isFolder;
+  const type = icon.type ?? (isFolder ? "File folder" : "Shortcut");
+  const size = icon.size ?? (isFolder ? "—" : "1 KB");
+
+  return {
+    id: icon.id,
+    name: icon.label,
+    icon: icon.icon,
+    type,
+    size,
+    isFolder,
+    isOpenable: true,
+    url: icon.url,
+  };
+});
 
 // Project URL helper functions
 const getProjectPreferredUrl = (projectId) => {
@@ -83,19 +90,22 @@ export const pathMap = {
         name: "Games",
         icon: "/icons/icons8-folder-94.png",
         isFolder: true,
-        size: "—",
+        size: "238 MB",
+        type: "Folder",
       },
       {
         name: "Photos",
         icon: "/icons/icons8-folder-94.png",
         isFolder: true,
         size: "—",
+        type: "Folder",
       },
       {
         name: "Projects",
         icon: "/icons/icons8-folder-94.png",
         isFolder: true,
-        size: "—",
+        size: "4.40 GB",
+        type: "Folder",
       },
     ],
   },
@@ -242,34 +252,11 @@ export const pathMap = {
   "This PC > Documents > Photos": {
     content: [
       {
-        name: "2024 Vacation",
-        icon: "/icons/icons8-folder-94.png",
-        isFolder: true,
-        size: "—",
-      },
-      {
-        name: "Family Events",
-        icon: "/icons/icons8-folder-94.png",
-        isFolder: true,
-        size: "—",
-      },
-      {
-        name: "Nature",
-        icon: "/icons/icons8-folder-94.png",
-        isFolder: true,
-        size: "—",
-      },
-      {
-        name: "Architecture",
-        icon: "/icons/icons8-folder-94.png",
-        isFolder: true,
-        size: "—",
-      },
-      {
         name: "Favorites",
         icon: "/icons/icons8-folder-94.png",
         isFolder: true,
         size: "—",
+        type: "Folder",
       },
     ],
   },
@@ -297,12 +284,14 @@ export const pathMap = {
         icon: "/icons/icons8-folder-94.png",
         isFolder: true,
         size: "—",
+        type: "Folder",
       },
       {
         name: "Wallpapers",
         icon: "/icons/icons8-folder-94.png",
         isFolder: true,
         size: "—",
+        type: "Folder",
       },
       { name: "vacation.jpg", icon: "🖼️", type: "JPEG Image", size: "2.5 MB" },
     ],
@@ -314,6 +303,7 @@ export const pathMap = {
         icon: "/icons/icons8-folder-94.png",
         isFolder: true,
         size: "—",
+        type: "Folder",
       },
       { name: "song1.mp3", icon: "🎵", type: "MP3 Audio", size: "5.2 MB" },
       { name: "song2.mp3", icon: "🎵", type: "MP3 Audio", size: "4.8 MB" },
@@ -326,6 +316,7 @@ export const pathMap = {
         icon: "/icons/icons8-folder-94.png",
         isFolder: true,
         size: "—",
+        type: "Folder",
       },
       { name: "tutorial.mp4", icon: "🎬", type: "MP4 Video", size: "125 MB" },
     ],
