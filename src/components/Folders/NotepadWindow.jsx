@@ -4,6 +4,8 @@ import Window from "../folder_styles/FolderGeneral";
 export default function NotepadWindow({
   onClose,
   onMinimize,
+  minimized = false,
+  minimizing = false,
   filePath = "/files/untitled.txt",
   title = null,
   content = null,
@@ -362,6 +364,8 @@ export default function NotepadWindow({
       }
       onClose={onClose}
       onMinimize={onMinimize}
+      minimized={minimized}
+      minimizing={minimizing}
       closing={closing}
       centered={centered}
       defaultWidth={defaultWidth}

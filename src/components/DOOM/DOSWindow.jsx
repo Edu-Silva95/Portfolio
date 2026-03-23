@@ -3,7 +3,7 @@ import Window from "../folder_styles/FolderGeneral";
 
 const DOOM_BUNDLE_URL = "https://v8.js-dos.com/bundles/doom.jsdos";
 
-export default function DOSWindow({ onClose, onMinimize, closing = false }) {
+export default function DOSWindow({ onClose, onMinimize, minimized = false, minimizing = false, closing = false }) {
   const containerRef = useRef(null);
   const dosRef = useRef(null);
 
@@ -131,7 +131,7 @@ export default function DOSWindow({ onClose, onMinimize, closing = false }) {
   }, []);
 
   return (
-    <Window title="DOOM" onClose={onClose} onMinimize={onMinimize} closing={closing} hideScrollbar>
+    <Window title="DOOM" onClose={onClose} onMinimize={onMinimize} minimized={minimized} minimizing={minimizing} closing={closing} hideScrollbar>
       <div
         ref={containerRef}
         style={{

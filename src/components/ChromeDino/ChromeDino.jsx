@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Window from "../folder_styles/FolderGeneral";
 
-export default function DinoWindow({ onClose, onMinimize, closing = false }) {
+export default function DinoWindow({ onClose, onMinimize, minimized = false, minimizing = false, closing = false }) {
   const canvasRef = useRef(null);
   const [running, setRunning] = useState(false);
   const [score, setScore] = useState(0);
@@ -400,7 +400,7 @@ export default function DinoWindow({ onClose, onMinimize, closing = false }) {
   }, [spriteError, spritesReady]);
 
   return (
-    <Window title="🦖 Dino Game.exe" onClose={onClose} onMinimize={onMinimize} closing={closing}>
+    <Window title="🦖 Dino Game.exe" onClose={onClose} onMinimize={onMinimize} minimized={minimized} minimizing={minimizing} closing={closing}>
       <div className="p-4 space-y-3 text-sm h-full flex flex-col">
         <div className="w-full flex justify-center">
           <div className="relative">

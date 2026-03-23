@@ -122,6 +122,14 @@ export const pathMap = {
         size: "345 MB",
         type: "Folder",
       },
+      {
+        name: "GitHub Profile.url",
+        icon: "/icons/url.png",
+        type: "URL",
+        size: "1 KB",
+        isOpenable: true,
+        url: "https://github.com/Edu-Silva95",
+      }
     ],
   },
   "This PC > Documents > Projects > Front-End Projects": {

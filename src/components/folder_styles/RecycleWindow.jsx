@@ -12,6 +12,8 @@ export default function RecycleWindow({
   onEmptyRecycleBin,
   onClose,
   onMinimize,
+  minimized = false,
+  minimizing = false,
   closing = false,
 }) {
   const { currentPath, navigationHistory: _navigationHistory, pushPath, handleBack, handleForward, canGoBack, canGoForward } = useFolderNavigation({
@@ -41,7 +43,7 @@ export default function RecycleWindow({
   const pathSegments = buildPathSegments(currentPath);
 
   return (
-    <Window title={windowTitle} onClose={onClose} onMinimize={onMinimize} closing={closing}>
+    <Window title={windowTitle} onClose={onClose} onMinimize={onMinimize} minimized={minimized} minimizing={minimizing} closing={closing}>
       <div className="flex flex-col h-full text-sm">
         <FolderToolbar
           onBack={handleBack}

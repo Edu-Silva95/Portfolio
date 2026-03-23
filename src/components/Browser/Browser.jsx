@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Window from "../folder_styles/FolderGeneral";
 
-export default function ChromeWindow({ onClose, onMinimize, closing = false, initialUrl = null }) {
+export default function ChromeWindow({ onClose, onMinimize, minimized = false, minimizing = false, closing = false, initialUrl = null }) {
   const HOME = "https://www.google.com/webhp?igu=1";
 
   const normalizedInitialUrl = useMemo(() => {
@@ -98,6 +98,8 @@ export default function ChromeWindow({ onClose, onMinimize, closing = false, ini
       }
       onClose={onClose}
       onMinimize={onMinimize}
+      minimized={minimized}
+      minimizing={minimizing}
       closing={closing}
       contentClassName="p-0"
     >

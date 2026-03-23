@@ -4,6 +4,8 @@ import { parseYouTubeVideoId } from "../../utils/youtube";
 export default function YoutubePlayer({
   onClose,
   onMinimize,
+  minimized = false,
+  minimizing = false,
   closing = false,
   title = "Project Demo",
   videoId = null,
@@ -21,6 +23,8 @@ export default function YoutubePlayer({
       }
       onClose={onClose}
       onMinimize={onMinimize}
+      minimized={minimized}
+      minimizing={minimizing}
       closing={closing}
       contentClassName="p-0"
     >

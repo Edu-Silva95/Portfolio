@@ -35,7 +35,7 @@ export const projectsData = [
     folderPath:
       "This PC > Documents > Projects > Full-Stack Projects > ShopListy",
     links: {
-      live: "",
+      live: "https://youtu.be/ZTr1KtXVHO4",
       repo: "https://github.com/Edu-Silva95/ShopListy",
       link: "shoplisty.space",
     },
@@ -102,7 +102,7 @@ export const projectsData = [
     links: {
       live: "",
       repo: "https://github.com/Edu-Silva95/Super-Simple-List",
-      link: "https://super-simple-list.vercel.app/newlist",
+      link: "https://super-simple-list.vercel.app/",
     },
     screenshots: [],
   },

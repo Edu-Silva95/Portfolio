@@ -1,7 +1,7 @@
 import { Rnd } from "react-rnd";
 import { useState, useRef, useEffect } from "react";
 
-export default function FolderGeneral({ title, children, onClose, onMinimize, hideScrollbar = false, minimized = false, closing = false, defaultWidth = 700, defaultHeight = 420, centered = false, dataWindowId, contentClassName = "p-4" }) {
+export default function FolderGeneral({ title, children, onClose, onMinimize, hideScrollbar = false, minimized = false, minimizing = false, closing = false, defaultWidth = 700, defaultHeight = 420, centered = false, dataWindowId, contentClassName = "p-4" }) {
   const titleBarHeight = 40;
   const [hasEntered, setHasEntered] = useState(false);
   const viewportMargin = 12;
@@ -183,7 +183,7 @@ export default function FolderGeneral({ title, children, onClose, onMinimize, hi
     >
       <div
         onMouseDown={bringToFront}
-        className={`bg-gray-900 text-white w-full h-full overflow-hidden shadow-xl flex flex-col origin-center will-change-transform transition-all duration-230 ease-[cubic-bezier(0.16,1,0.3,1)] ${closing ? "translate-y-2 opacity-0 scale-95 pointer-events-none" : hasEntered ? "translate-y-0 opacity-100 scale-100" : "translate-y-3 opacity-0 scale-95"} ${isMaximized ? "rounded-none shadow-none" : "rounded-xl"}`}
+        className={`bg-gray-900 text-white w-full h-full overflow-hidden shadow-xl flex flex-col origin-center will-change-transform transition-all duration-230 ease-[cubic-bezier(0.16,1,0.3,1)] ${closing ? "translate-y-2 opacity-0 scale-95 pointer-events-none" : minimizing ? "translate-y-3 opacity-0 scale-95 pointer-events-none" : hasEntered ? "translate-y-0 opacity-100 scale-100" : "translate-y-3 opacity-0 scale-95"} ${isMaximized ? "rounded-none shadow-none" : "rounded-xl"}`}
       >
         <div
           className="window-title bg-gray-700 p-2 flex justify-between items-center cursor-move select-none flex-shrink-0"

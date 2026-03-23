@@ -10,7 +10,7 @@ export function parseYouTubeVideoId(value) {
   try {
     url = new URL(raw);
   } catch {
-    // Sometimes people paste without protocol: youtube.com/watch?v=...
+
     try {
       url = new URL(`https://${raw}`);
     } catch {

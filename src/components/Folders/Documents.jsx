@@ -15,6 +15,8 @@ import { parseYouTubeVideoId } from "../../utils/youtube";
 export default function Documents({
   onClose,
   onMinimize,
+  minimized = false,
+  minimizing = false,
   onOpenWindow = () => { },
   initialPath = "Documents",
   centered = false,
@@ -240,7 +242,7 @@ export default function Documents({
   };
 
   return (
-    <Window title={windowTitle} onClose={onClose} onMinimize={onMinimize} centered={centered} defaultWidth={defaultWidth} defaultHeight={defaultHeight} closing={closing}>
+    <Window title={windowTitle} onClose={onClose} onMinimize={onMinimize} minimized={minimized} minimizing={minimizing} centered={centered} defaultWidth={defaultWidth} defaultHeight={defaultHeight} closing={closing}>
       <div className="flex flex-col h-full">
         <FolderToolbar
           onBack={handleBack}

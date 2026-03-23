@@ -13,7 +13,7 @@ import { buildProjectReadme } from "../../utils/projectsReadme";
 import { openExternalUrl } from "../../utils/externalUrl";
 import { parseYouTubeVideoId } from "../../utils/youtube";
 
-export default function ThisPC({ onClose, onMinimize, onOpenWindow = () => { }, initialPath = "This PC", centered = false, defaultWidth = 700, defaultHeight = 420, windowId = "", updateWindowPath = null, savedPath = null, savedHistory = null, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, openableIds = [], closing = false }) {
+export default function ThisPC({ onClose, onMinimize, minimized = false, minimizing = false, onOpenWindow = () => { }, initialPath = "This PC", centered = false, defaultWidth = 700, defaultHeight = 420, windowId = "", updateWindowPath = null, savedPath = null, savedHistory = null, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, openableIds = [], closing = false }) {
   const { currentPath, pushPath, handleBack, handleForward, canGoBack, canGoForward } = useFolderNavigation({
     initialPath,
     savedPath,
@@ -273,7 +273,7 @@ export default function ThisPC({ onClose, onMinimize, onOpenWindow = () => { }, 
   });
 
   return (
-    <Window title={windowTitle} onClose={onClose} onMinimize={onMinimize} centered={centered} defaultWidth={defaultWidth} defaultHeight={defaultHeight} closing={closing}>
+    <Window title={windowTitle} onClose={onClose} onMinimize={onMinimize} minimized={minimized} minimizing={minimizing} centered={centered} defaultWidth={defaultWidth} defaultHeight={defaultHeight} closing={closing}>
       <div className="flex flex-col h-full">
         <FolderToolbar
           onBack={handleBack}

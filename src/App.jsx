@@ -137,7 +137,7 @@ function App() {
         />
         {/* Render all open windows dynamically */}
         {Object.entries(openWindows).map(([id, win]) => {
-          if ((!win.open && !win.closing) || win.minimized) return null;
+          if ((!win.open && !win.closing) || (win.minimized && !win.minimizing)) return null;
           const Component = windowsConfig[id];
           if (!Component) return null;
           const extraProps = buildWindowExtraProps({
@@ -166,6 +166,7 @@ function App() {
               windowId={id}
               dataWindowId={id}
               minimized={win.minimized}
+              minimizing={!!win.minimizing}
               closing={!!win.closing}
               onClose={() => closeWindow(id)}
               onMinimize={() => minimizeWindow(id)}

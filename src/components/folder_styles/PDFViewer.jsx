@@ -1,8 +1,8 @@
 import Window from "./FolderGeneral";
 
-export default function PDFViewer({ onClose, onMinimize, filePath, title, closing = false }) {
+export default function PDFViewer({ onClose, onMinimize, minimized = false, minimizing = false, filePath, title, closing = false }) {
   return (
-    <Window title={title || "PDF Viewer"} onClose={onClose} onMinimize={onMinimize} closing={closing}>
+    <Window title={title || "PDF Viewer"} onClose={onClose} onMinimize={onMinimize} minimized={minimized} minimizing={minimizing} closing={closing}>
       <div className="flex flex-col h-full">
         <iframe
           src={filePath}

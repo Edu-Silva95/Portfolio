@@ -9,6 +9,8 @@ import { useFileSystem } from "../../context/FileSystemContext";
 export default function AboutWindow({
   onClose,
   onMinimize,
+  minimized = false,
+  minimizing = false,
   onOpenReadme,
   onNavigateSystemPath = null,
   onContextMenuRequested = null,
@@ -145,7 +147,7 @@ export default function AboutWindow({
 
   return (
     <>
-      <Window title="📂 Project Info" onClose={onClose} onMinimize={onMinimize} closing={closing} hideScrollbar>
+    <Window title="📁 Project Info" onClose={onClose} onMinimize={onMinimize} minimized={minimized} minimizing={minimizing} closing={closing}>
         <div className="flex flex-col h-full">
         <FolderToolbar
           onBack={handleBack}
