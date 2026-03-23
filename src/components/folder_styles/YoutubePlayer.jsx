@@ -17,7 +17,7 @@ export default function YoutubePlayer({
     <Window
       title={
         <span className="flex items-center gap-2">
-          <span className="text-base">🎬</span>
+          <img src="/icons/youtube.png" alt="YouTube" className="w-5 h-5" />
           <span>{title}</span>
         </span>
       }

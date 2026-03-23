@@ -47,4 +47,4 @@ windowIcons.notes = "/icons/notepad.ico";
 windowIcons.readme = "/icons/notepad.ico";
 windowIcons.cv = "/icons/pdf-file-format.ico";
 windowIcons.dino = "🦖";
-windowIcons.youtube = "🎬";
+windowIcons.youtube = "/icons/youtube.png";
