@@ -212,11 +212,24 @@ export const pathMap = {
   // Full-stack projects with a custom icon and an image file in each folder.
   "This PC > Documents > Projects > Full-Stack Projects > ShopListy": {
     content: [
-      { name: "screenshot.png", icon: "/icons/image.png", type: "PNG Image", size: "500 KB", isOpenable: true },
+      { name: "Screenshots", icon: "/icons/icons8-folder-94.png", type: "Folder", size: "8.04 MB", isOpenable: true, isFolder: true },
       { name: "README.txt", icon: "/icons/document.png", type: "Text Document", size: "5 MB", isOpenable: true },
       { name: "ShopListy_Live_Demo.mp4", icon: "/icons/youtube.png", type: "Video", size: "1 KB", isOpenable: true },
       ...projectUrlItem("shoplisty"),
     ],
+  },
+   "This PC > Documents > Projects > Full-Stack Projects > ShopListy > Screenshots": {
+    content: [
+      { name: "Login.png", icon: "/icons/LogIn_page.PNG", path: "/icons/LogIn_page.PNG", type: "PNG Image", size: "904 KB", isOpenable: true },
+      { name: "Homepage.png", icon: "/icons/Homepage.PNG", path: "/icons/Homepage.PNG", type: "PNG Image", size: "1.48 MB", isOpenable: true },
+      { name: "Closest_Supermarkets.png", icon: "/icons/5closest_places.PNG", path: "/icons/5closest_places.PNG", type: "PNG Image", size: "952 KB", isOpenable: true },
+      { name: "Categories.png", icon: "/icons/Category_page.PNG", path: "/icons/Category_page.PNG", type: "PNG Image", size: "988 KB", isOpenable: true },
+      { name: "Cart_page.png", icon: "/icons/Cart_page.PNG", path: "/icons/Cart_page.PNG", type: "PNG Image", size: "852 KB", isOpenable: true },
+      { name: "List_Management.png", icon: "/icons/List_Management_page.PNG", path: "/icons/List_Management_page.PNG", type: "PNG Image", size: "720 KB", isOpenable: true },
+      { name: "List_View.png", icon: "/icons/List_View_page.PNG", path: "/icons/List_View_page.PNG", type: "PNG Image", size: "776 KB", isOpenable: true },
+      { name: "Messages_page.png", icon: "/icons/Messages_page.PNG", path: "/icons/Messages_page.PNG", type: "PNG Image", size: "460 KB", isOpenable: true },
+      { name: "Chat_page.png", icon: "/icons/Chat_page.PNG", path: "/icons/Chat_page.PNG", type: "PNG Image", size: "1.04 MB", isOpenable: true },
+    ],  
   },
   "This PC > Documents > Projects > Full-Stack Projects > Chefie": {
     content: [

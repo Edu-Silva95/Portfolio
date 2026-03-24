@@ -38,12 +38,12 @@ export default function RecycleWindow({
 
   const itemCount = filtered.length;
 
-  const pathDisplay = `🗑️ ${formatPath(currentPath, { segmentIcon: "📂" })}`;
-  const windowTitle = getWindowTitle(currentPath, { segmentIcon: "📂" });
+  const pathDisplay = `🗑️ ${formatPath(currentPath, { segmentIcon: "/icons/windows-recycle.png" })}`;
+  const windowTitle = getWindowTitle(currentPath, { segmentIcon: "/icons/windows-recycle.png" });
   const pathSegments = buildPathSegments(currentPath);
 
   return (
-    <Window title={windowTitle} onClose={onClose} onMinimize={onMinimize} minimized={minimized} minimizing={minimizing} closing={closing}>
+    <Window title={windowTitle} icon="/icons/windows-recycle.png" onClose={onClose} onMinimize={onMinimize} minimized={minimized} minimizing={minimizing} closing={closing}>
       <div className="flex flex-col h-full text-sm">
         <FolderToolbar
           onBack={handleBack}

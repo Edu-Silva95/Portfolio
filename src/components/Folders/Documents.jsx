@@ -96,6 +96,16 @@ export default function Documents({
 
   // Open folders or special files from the list.
   const handleItemDoubleClick = (item) => {
+    const isImageName = (name) => /\.(png|jpe?g|webp|gif)$/i.test(String(name || "").trim());
+    const getImageSrc = (it) => {
+      if (!it) return "";
+      if (typeof it.path === "string" && it.path.trim()) return it.path;
+      if (typeof it.src === "string" && it.src.trim()) return it.src;
+      if (typeof it.url === "string" && it.url.trim() && isImageName(it.url)) return it.url;
+      if (typeof it.icon === "string" && it.icon.trim() && isImageName(it.icon)) return it.icon;
+      return "";
+    };
+
     if (!item?.isFolder) {
       const itemType = String(item?.type || "").toLowerCase();
       if (itemType === "url" || item?.url) {
@@ -104,6 +114,20 @@ export default function Documents({
           openExternalUrl(url, { preferNewTab: true });
           return;
         }
+      }
+    }
+
+    // Open images in the in-app ImagePlayer (works in project subfolders like Screenshots).
+    if (!item?.isFolder && isImageName(item?.name) && typeof onOpenWindow === "function" && typeof updateWindowPath === "function") {
+      const imageItems = (currentContent || []).filter((it) => !it?.isFolder && isImageName(it?.name));
+      const imageSrcs = imageItems.map(getImageSrc).filter(Boolean);
+      const clickedSrc = getImageSrc(item);
+
+      if (imageSrcs.length && clickedSrc) {
+        const startIndex = Math.max(0, imageSrcs.indexOf(clickedSrc));
+        updateWindowPath("image", "", { title: String(item?.name || "Image"), images: imageSrcs, startIndex });
+        onOpenWindow("image");
+        return;
       }
     }
 

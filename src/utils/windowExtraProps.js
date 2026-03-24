@@ -155,6 +155,18 @@ export function buildWindowExtraProps({
     }
   }
 
+  if (id === "image") {
+    extraProps.centered = true;
+    extraProps.defaultWidth = 900;
+    extraProps.defaultHeight = 600;
+
+    if (win?.navigationHistory && typeof win.navigationHistory === "object") {
+      extraProps.title = win.navigationHistory.title || extraProps.title;
+      extraProps.images = Array.isArray(win.navigationHistory.images) ? win.navigationHistory.images : extraProps.images;
+      extraProps.startIndex = Number.isFinite(win.navigationHistory.startIndex) ? win.navigationHistory.startIndex : extraProps.startIndex;
+    }
+  }
+
   if (id === "localdisc_c") {
     extraProps.title = "Local Disk (C:)";
     extraProps.centered = true;

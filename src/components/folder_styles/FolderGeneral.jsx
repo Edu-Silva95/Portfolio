@@ -1,7 +1,7 @@
 import { Rnd } from "react-rnd";
 import { useState, useRef, useEffect } from "react";
 
-export default function FolderGeneral({ title, children, onClose, onMinimize, hideScrollbar = false, minimized = false, minimizing = false, closing = false, defaultWidth = 700, defaultHeight = 420, centered = false, dataWindowId, contentClassName = "p-4" }) {
+export default function FolderGeneral({ title, icon = null, children, onClose, onMinimize, hideScrollbar = false, minimized = false, minimizing = false, closing = false, defaultWidth = 700, defaultHeight = 420, centered = false, dataWindowId, contentClassName = "p-4", cursor = null }) {
   const titleBarHeight = 40;
   const [hasEntered, setHasEntered] = useState(false);
   const viewportMargin = 12;
@@ -95,7 +95,7 @@ export default function FolderGeneral({ title, children, onClose, onMinimize, hi
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose, title]);
 
-// Trigger enter animation on mount
+  // Trigger enter animation on mount
   useEffect(() => {
     const id = window.requestAnimationFrame(() => setHasEntered(true));
     return () => window.cancelAnimationFrame(id);
@@ -154,7 +154,7 @@ export default function FolderGeneral({ title, children, onClose, onMinimize, hi
       onMinimize();
     }
   }
- // Closes window
+  // Closes window
   function handleClose() {
     onClose?.();
   }
@@ -179,7 +179,7 @@ export default function FolderGeneral({ title, children, onClose, onMinimize, hi
       dragHandleClassName="window-title"
       enableResizing={!isMaximized}
       disableDragging={isMaximized}
-      style={{ zIndex }}
+      style={{ zIndex, ...(cursor ? { cursor } : null) }}
     >
       <div
         onMouseDown={bringToFront}
@@ -191,6 +191,13 @@ export default function FolderGeneral({ title, children, onClose, onMinimize, hi
           style={{ height: titleBarHeight }}
         >
           <div className="flex items-center gap-3">
+            {icon ? (
+              typeof icon === "string" && icon.includes("/") ? (
+                <img src={icon} alt="" className="w-4 h-4" />
+              ) : (
+                <span className="text-base leading-none">{icon}</span>
+              )
+            ) : null}
             <strong>{title}</strong>
           </div>
 

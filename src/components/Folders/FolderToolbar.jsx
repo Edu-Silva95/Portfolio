@@ -49,7 +49,12 @@ export default function FolderToolbar({
                   {seg.label}
                 </button>
                 {idx < pathSegments.length - 1 && (
-                  <span className="text-white/40">›</span>
+                  <img
+                    src="/icons/right-arrow.png"
+                    alt="Breadcrumb separator"
+                    className="w-3 h-3 mt-1 opacity-70"
+                    aria-hidden="true"
+                  />
                 )}
               </div>
             ))
@@ -81,7 +86,7 @@ export default function FolderToolbar({
               aria-pressed={viewMode === "list"}
               title="List view"
             >
-              ☰
+              <img src="/icons/ListView.png" alt="" className="w-4 h-4" />
             </button>
             <button
               type="button"
@@ -92,7 +97,7 @@ export default function FolderToolbar({
               aria-pressed={viewMode === "icons"}
               title="Icon view"
             >
-              ⊞
+              <img src="/icons/IconView.png" alt="" className="w-4 h-4" />
             </button>
           </div>
         )}
