@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Window from "../folder_styles/FolderGeneral";
 
-export default function NotepadWindow({
+export default function MyNotes({
   onClose,
   onMinimize,
   minimized = false,

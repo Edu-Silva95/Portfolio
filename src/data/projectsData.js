@@ -70,7 +70,7 @@ export const projectsData = [
     ],
     folderPath: "This PC > Documents > Projects > Full-Stack Projects > Chefie",
     links: {
-      live: "",
+      live: "https://youtu.be/omJfPkr3jys",
       repo: "https://github.com/Edu-Silva95/Chefie",
       link: "https://chefie-dry-sound-571.fly.dev/",
     },

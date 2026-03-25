@@ -8,9 +8,8 @@ import { formatPath, getWindowTitle, buildPathSegments } from "../../utils/folde
 import { PhotosContent } from "./Photos";
 import { GamesContent } from "./Games";
 import { getProjectByFolderPath } from "../../data/projectsData";
-import { buildProjectReadme } from "../../utils/projectsReadme";
 import { openExternalUrl } from "../../utils/externalUrl";
-import { parseYouTubeVideoId } from "../../utils/youtube";
+import { tryOpenImagePlayer, tryOpenProjectVirtualItem } from "../../utils/folderOpenUtils";
 
 export default function Documents({
   onClose,
@@ -96,16 +95,6 @@ export default function Documents({
 
   // Open folders or special files from the list.
   const handleItemDoubleClick = (item) => {
-    const isImageName = (name) => /\.(png|jpe?g|webp|gif)$/i.test(String(name || "").trim());
-    const getImageSrc = (it) => {
-      if (!it) return "";
-      if (typeof it.path === "string" && it.path.trim()) return it.path;
-      if (typeof it.src === "string" && it.src.trim()) return it.src;
-      if (typeof it.url === "string" && it.url.trim() && isImageName(it.url)) return it.url;
-      if (typeof it.icon === "string" && it.icon.trim() && isImageName(it.icon)) return it.icon;
-      return "";
-    };
-
     if (!item?.isFolder) {
       const itemType = String(item?.type || "").toLowerCase();
       if (itemType === "url" || item?.url) {
@@ -118,82 +107,11 @@ export default function Documents({
     }
 
     // Open images in the in-app ImagePlayer (works in project subfolders like Screenshots).
-    if (!item?.isFolder && isImageName(item?.name) && typeof onOpenWindow === "function" && typeof updateWindowPath === "function") {
-      const imageItems = (currentContent || []).filter((it) => !it?.isFolder && isImageName(it?.name));
-      const imageSrcs = imageItems.map(getImageSrc).filter(Boolean);
-      const clickedSrc = getImageSrc(item);
-
-      if (imageSrcs.length && clickedSrc) {
-        const startIndex = Math.max(0, imageSrcs.indexOf(clickedSrc));
-        updateWindowPath("image", "", { title: String(item?.name || "Image"), images: imageSrcs, startIndex });
-        onOpenWindow("image");
-        return;
-      }
-    }
+    if (tryOpenImagePlayer({ item, list: currentContent, onOpenWindow, updateWindowPath })) return;
 
     // If we're inside a project folder, allow opening its virtual files.
     const project = getProjectByFolderPath(globalPath);
-    if (project && !item?.isFolder) {
-      const name = String(item?.name || "");
-      const lower = name.toLowerCase();
-      const itemType = String(item?.type || "").toLowerCase();
-
-      const openNotes = (title, content) => {
-        if (typeof onOpenWindow !== "function" || typeof updateWindowPath !== "function") return;
-        // Set the notes window payload first so it doesn't briefly load `/files/untitled.txt`.
-        updateWindowPath("notes", "", { title, content: String(content ?? "") });
-        onOpenWindow("notes");
-      };
-
-      const openExternalTab = (url) => {
-        // Some browsers may return `null` from `window.open` even when the tab opens (notably with `noopener`).
-        // We only want to trigger a real browser tab here and never fall back to the in-app browser.
-        openExternalUrl(url, { preferNewTab: true });
-        return true;
-      };
-
-      if (itemType === "url" || item?.url) {
-        const url = item?.url || project.links?.link || project.links?.live || project.links?.repo;
-        if (url) openExternalTab(url);
-        else openNotes(name || "URL", "No URL configured for this project.");
-        return;
-      }
-
-      if (lower === "readme.txt") {
-        const content = buildProjectReadme(project);
-        openNotes(name || "README", content || "(README not available.)");
-        return;
-      }
-
-      const isLiveDemoVideoFile = /_live_demo\.mp4$/i.test(name.trim());
-
-      if (lower === "live_demo_link.txt" || isLiveDemoVideoFile) {
-        const candidate = project.demoYoutubeUrl || project.demoYoutubeId || project.links?.youtube || project.links?.live;
-        const youtubeId = parseYouTubeVideoId(candidate);
-
-        if (youtubeId && typeof onOpenWindow === "function" && typeof updateWindowPath === "function") {
-          updateWindowPath("youtube", String(candidate || youtubeId), { title: `${project.name || "Project"} Demo`, videoId: youtubeId });
-          onOpenWindow("youtube");
-          return;
-        }
-
-        const live = project.links?.live;
-        if (live) {
-          openExternalTab(live);
-          return;
-        }
-
-        openNotes(name || "Live demo", "No YouTube demo configured for this project.");
-        return;
-      }
-
-      if (lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".webp") || lower.endsWith(".gif")) {
-        const src = Array.isArray(project.screenshots) && project.screenshots.length ? project.screenshots[0] : "";
-        if (src) openExternalTab(src);
-        else openNotes(name, "No screenshot URL configured for this project.");
-        return;
-      }
-    }
+    if (tryOpenProjectVirtualItem({ item, project, onOpenWindow, updateWindowPath })) return;
 
     if (item.isFolder) {
       const newPath = `${currentPath} > ${item.name}`;

@@ -1,10 +1,11 @@
-import AboutWindow from "../components/folder_styles/AboutWindow";
-import RecycleWindow from "../components/folder_styles/RecycleWindow";
-import NotepadWindow from "../components/Folders/NotepadWindow";
+import ProjectInfo from "../components/folder_styles/ProjectInfo";
+import RecycleBin from "../components/folder_styles/RecycleBin";
+import MyNotes from "../components/Folders/MyNotes";
 import PDFViewer from "../components/folder_styles/PDFViewer";
 import DOSWindow from "../components/DOOM/DOSWindow";
 import Documents from "../components/Folders/Documents";
 import ThisPC from "../components/Folders/ThisPC";
+import ProjectsFolder from "../components/Folders/Projects";
 import DinoWindow from "../components/ChromeDino/ChromeDino";
 import Browser from "../components/Browser/Browser";
 import YouTubeWindow from "../components/folder_styles/YoutubePlayer";
@@ -12,11 +13,11 @@ import ImagePlayerWindow from "../components/folder_styles/ImagePlayerWindow";
 import { desktopIconsData } from "./desktopIcons";
 
 export const windowsConfig = {
-  projects: Documents,
-  about: AboutWindow,
-  recycle: RecycleWindow,
-  notes: NotepadWindow,
-  readme: NotepadWindow,
+  projects: ProjectsFolder,
+  about: ProjectInfo,
+  recycle: RecycleBin,
+  notes: MyNotes,
+  readme: MyNotes,
   cv: PDFViewer,
   dino: DinoWindow,
   doom: DOSWindow,

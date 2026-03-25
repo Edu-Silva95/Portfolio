@@ -5,7 +5,7 @@ import useFolderNavigation from "../../hooks/useFolderNavigation";
 import { formatPath, getWindowTitle, buildPathSegments } from "../../utils/folderPath";
 import FileTable from "../Folders/FileTable";
 
-export default function RecycleWindow({
+export default function RecycleBin({
   recycleBin = [],
   onRestore,
   onDeleteForever,

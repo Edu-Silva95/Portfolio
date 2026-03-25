@@ -6,7 +6,7 @@ import useFolderNavigation from "../../hooks/useFolderNavigation";
 import { buildPathSegments } from "../../utils/folderPath";
 import { useFileSystem } from "../../context/FileSystemContext";
 
-export default function AboutWindow({
+export default function ProjectInfo({
   onClose,
   onMinimize,
   minimized = false,

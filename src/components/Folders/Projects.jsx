@@ -1,17 +1,44 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useFileSystem } from "../../../context/FileSystemContext";
-import Window from "../../folder_styles/FolderGeneral";
-import FolderToolbar from "../FolderToolbar";
-import FileTable from "../FileTable";
-import useFolderNavigation from "../../../hooks/useFolderNavigation";
-import { buildPathSegments } from "../../../utils/folderPath";
+import { useFileSystem } from "../../context/FileSystemContext";
+import Window from "../folder_styles/FolderGeneral";
+import FolderToolbar from "./FolderToolbar";
+import FileTable from "./FileTable";
+import useFolderNavigation from "../../hooks/useFolderNavigation";
+import { buildPathSegments } from "../../utils/folderPath";
+import { openExternalUrl } from "../../utils/externalUrl";
+import { getProjectByFolderPath } from "../../data/projectsData";
+import { tryOpenImagePlayer, tryOpenProjectVirtualItem } from "../../utils/folderOpenUtils";
 
-export default function ProjectsFolder({ onClose, onMinimize, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, closing = false }) {
-  const projectsPath = "Documents > Projects";
+export default function ProjectsFolder({
+  onClose,
+  onMinimize,
+  minimized = false,
+  minimizing = false,
+  onOpenWindow = () => { },
+  centered = false,
+  defaultWidth = 700,
+  defaultHeight = 420,
+  windowId = "",
+  updateWindowPath = null,
+  savedPath = null,
+  savedHistory = null,
+  initialPath = "Documents > Projects",
+  dataWindowId,
+  onContextMenuRequested = null,
+  onMoveToRecycleBin = null,
+  onCreateDesktopShortcut = null,
+  pendingRestores = null,
+  onConsumeRestore = null,
+  closing = false,
+}) {
+  const projectsPath = initialPath;
 
   const { currentPath, pushPath, handleBack, handleForward, canGoBack, canGoForward } = useFolderNavigation({
     initialPath: projectsPath,
-    windowId: "projects",
+    savedPath,
+    savedHistory,
+    windowId,
+    updateWindowPath,
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState("list");
@@ -78,7 +105,29 @@ export default function ProjectsFolder({ onClose, onMinimize, onContextMenuReque
   };
 
   function handleItemDoubleClick(item) {
-    // Normal folder navigation (treat projects as folders)
+    if (!item) return;
+
+    // URL files open externally.
+    if (!item?.isFolder) {
+      const itemType = String(item?.type || "").toLowerCase();
+      if (itemType === "url" || item?.url) {
+        const url = item?.url;
+        if (url) {
+          openExternalUrl(url, { preferNewTab: true });
+          return;
+        }
+      }
+    }
+
+    // Images open in the in-app ImagePlayer.
+    const currentItems = fileTree[globalPath]?.content || [];
+    if (tryOpenImagePlayer({ item, list: currentItems, onOpenWindow, updateWindowPath })) return;
+
+    // If we are inside a project folder, allow opening its virtual files (YouTube/readme/etc).
+    const project = getProjectByFolderPath(globalPath);
+    if (tryOpenProjectVirtualItem({ item, project, onOpenWindow, updateWindowPath })) return;
+
+    // Default: folder navigation.
     if (item.isFolder) {
       pushPath(`${currentPath} > ${item.name}`);
     }
@@ -88,7 +137,18 @@ export default function ProjectsFolder({ onClose, onMinimize, onContextMenuReque
   const pathSegments = buildPathSegments(currentPath);
 
   return (
-    <Window title="📂 Projects" onClose={onClose} onMinimize={onMinimize} closing={closing}>
+    <Window
+      title="📂 Projects"
+      onClose={onClose}
+      onMinimize={onMinimize}
+      minimized={minimized}
+      minimizing={minimizing}
+      centered={centered}
+      defaultWidth={defaultWidth}
+      defaultHeight={defaultHeight}
+      dataWindowId={dataWindowId}
+      closing={closing}
+    >
       <div
         className="flex flex-col h-full"
         onContextMenu={(e) => {
