@@ -292,11 +292,12 @@ export default function Taskbar({
           {/* Start Button */}
           <div className="relative">
             <button
-              className="flex items-center justify-center w-9 h-9
+              className={`flex items-center justify-center w-9 h-9
                          bg-white/10 hover:bg-white/20
                          border border-white/20
                          rounded-xl backdrop-blur-md
-                         text-white shadow transition"
+                         text-white shadow transition
+                         ${isStartMenuMounted ? "bg-white/20 border-white/30" : ""}`}
               ref={startBtnRef}
               onClick={handleStartClick}
               aria-expanded={startMenuOpen}
@@ -311,7 +312,7 @@ export default function Taskbar({
               <div
                 id="start-menu"
                 ref={startMenuRef}
-                className={`absolute bottom-14 left-0 w-[520px] h-[800px] max-h-[80vh]
+                className={`absolute bottom-14 left-0 w-[calc(100vw-1rem)] max-w-[500px] h-[65vh] md:h-[800px] max-h-[80vh]
                            bg-gray-800 backdrop-blur-2xl
                            rounded-2xl border border-white/10
                            shadow-2xl p-6 text-white
