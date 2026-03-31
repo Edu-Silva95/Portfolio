@@ -235,6 +235,8 @@ export default function Documents({
           >
             <FileTable
               items={filteredContent}
+              currentPath={globalPath}
+              pathMap={fileTree}
               {...sharedFileTableProps}
               onItemContextMenu={openContextMenuForItem}
             />

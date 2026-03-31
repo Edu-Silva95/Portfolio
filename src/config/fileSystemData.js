@@ -15,6 +15,9 @@ const desktopContent = desktopIconsData.map((icon) => {
     isFolder,
     isOpenable: true,
     url: icon.url,
+    targetId: icon.targetId,
+    targetWindowId: icon.targetWindowId,
+    targetPath: icon.targetPath,
   };
 });
 
@@ -22,7 +25,7 @@ const desktopContent = desktopIconsData.map((icon) => {
 const getProjectPreferredUrl = (projectId) => {
   const project = getProjectById(projectId);
   const links = project?.links || {};
-  return links.link || links.live || links.repo || "";
+  return links.live || links.link || links.repo || "";
 };
 
 const projectUrlItem = (projectId) => {
@@ -115,21 +118,21 @@ export const pathMap = {
         name: "Full-Stack Projects",
         isFolder: true,
         icon: "/icons/icons8-folder-94.png",
-        size: "30 MB",
+        size: "—",
         type: "Folder",
       },
       {
         name: "Front-End Projects",
         isFolder: true,
         icon: "/icons/icons8-folder-94.png",
-        size: "4 MB",
+        size: "—",
         type: "Folder",
       },
       {  
         name: "Course Projects",
         isFolder: true,
         icon: "/icons/icons8-folder-94.png",
-        size: "345 MB",
+        size: "—",
         type: "Folder",
       },
       {
@@ -150,7 +153,7 @@ export const pathMap = {
         isOpenable: true,
         isFolder: true,
         icon: "/icons/icons8-folder-94.png",
-        size: "4 MB",
+        size: "—",
       },
     ],
   },
@@ -164,7 +167,7 @@ export const pathMap = {
         projectId: "shoplisty",
         icon: "/icons/icons8-folder-94.png",
         type: "Folder",
-        size: "13 MB",
+        size: "—",
       },
       {
         name: "Chefie",
@@ -174,7 +177,7 @@ export const pathMap = {
         isOpenable: true,
         icon: "/icons/icons8-folder-94.png",
         type: "Folder",
-        size: "7.8 MB",
+        size: "—",
       },
       {
         name: "Foodie",
@@ -184,7 +187,7 @@ export const pathMap = {
         isOpenable: true,
         icon: "/icons/icons8-folder-94.png",
         type: "Folder",
-        size: "5 MB",
+        size: "—",
       },
       {
         name: "Super Simple List",
@@ -194,7 +197,7 @@ export const pathMap = {
         isOpenable: true,
         icon: "/icons/icons8-folder-94.png",
         type: "Folder",
-        size: "4 MB",
+        size: "—",
       }
     ],
   },
@@ -215,7 +218,7 @@ export const pathMap = {
     content: [
       { name: "Screenshots", icon: "/icons/icons8-folder-94.png", type: "Folder", size: "8.04 MB", isOpenable: true, isFolder: true },
       { name: "README.txt", icon: "/icons/document.png", type: "Text Document", size: "5 MB", isOpenable: true },
-      { name: "ShopListy_Live_Demo.mp4", icon: "/icons/youtube.png", type: "Video", size: "1 KB", isOpenable: true },
+      { name: "ShopListy_Live_Demo.mp4", icon: "/icons/youtube.png", type: "Video", size: "78.9 MB", isOpenable: true },
       { name: "ShopListy_Repo.url", icon: "/icons/github.png", type: "URL", size: "1 KB", isOpenable: true, url: ("https://github.com/Edu-Silva95/ShopListy") },
       ...projectUrlItem("shoplisty"),
     ],
@@ -237,7 +240,7 @@ export const pathMap = {
     content: [
       { name: "Screenshots", icon: "/icons/icons8-folder-94.png", type: "Folder", size: "2.80 MB", isOpenable: true, isFolder: true },
       { name: "README.txt", icon: "/icons/document.png", type: "Text Document", size: "5 MB", isOpenable: true },
-      { name: "Chefie_Live_Demo.mp4", icon: "/icons/youtube.png", type: "Video", size: "1 KB", isOpenable: true },
+      { name: "Chefie_Live_Demo.mp4", icon: "/icons/youtube.png", type: "Video", size: "42.6 MB", isOpenable: true },
       { name: "Chefie_Repo.url", icon: "/icons/github.png", type: "URL", size: "1 KB", isOpenable: true, url: "https://github.com/Edu-Silva95/Chefie" },
       ...projectUrlItem("chefie"),
     ],
@@ -269,11 +272,21 @@ export const pathMap = {
   },
   "This PC > Documents > Projects > Full-Stack Projects > Super Simple List": {
     content: [
-      { name: "screenshot.png", icon: "/icons/image.png", type: "PNG Image", size: "500 KB", isOpenable: true },
+      { name: "Screenshots", icon: "/icons/icons8-folder-94.png", type: "Folder", size: "1.15 MB", isOpenable: true, isFolder: true },
       { name: "README.txt", icon: "/icons/document.png", type: "Text Document", size: "3 MB", isOpenable: true },
-      { name: "Super Simple List_Live_Demo.mp4", icon: "/icons/youtube.png", type: "Video", size: "874 MB", isOpenable: true },
+      { name: "Super Simple List_Live_Demo.mp4", icon: "/icons/youtube.png", type: "Video", size: "5.31 MB", isOpenable: true },
       { name: "Super Simple List_Repo.url", icon: "/icons/github.png", type: "URL", size: "1 KB", isOpenable: true, url: "https://github.com/Edu-Silva95/Super-Simple-List" },
       ...projectUrlItem("super-simple-list"),
+    ],
+  },
+   "This PC > Documents > Projects > Full-Stack Projects > Super Simple List > Screenshots": {
+    content: [
+      { name: "HomePage.png", icon: "/projects/SuperSimpleList/HomePage.png", path: "/projects/SuperSimpleList/HomePage.png", type: "PNG Image", size: "164 KB", isOpenable: true },
+      { name: "Create New List.png", icon: "/projects/SuperSimpleList/CreateNewList.png", path: "/projects/SuperSimpleList/CreateNewList.png", type: "PNG Image", size: "164 KB", isOpenable: true },
+      { name: "Add Product.png", icon: "/projects/SuperSimpleList/AddProduct.png", path: "/projects/SuperSimpleList/AddProduct.png", type: "PNG Image", size: "168 KB", isOpenable: true },
+      { name: "List Preview.png", icon: "/projects/SuperSimpleList/ListPreview.png", path: "/projects/SuperSimpleList/ListPreview.png", type: "PNG Image", size: "140 KB", isOpenable: true },
+      { name: "List Page.png", icon: "/projects/SuperSimpleList/ListPage.png", path: "/projects/SuperSimpleList/ListPage.png", type: "PNG Image", size: "168 KB", isOpenable: true },
+      { name: "Update List.png", icon: "/projects/SuperSimpleList/UpdateList.png", path: "/projects/SuperSimpleList/UpdateList.png", type: "PNG Image", size: "376 KB", isOpenable: true },
     ],
   },
   // Front-end projects with a custom icon and an image file.

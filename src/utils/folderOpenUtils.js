@@ -79,7 +79,11 @@ export function tryOpenProjectVirtualItem({
   };
 
   if (itemType === "url" || item?.url) {
-    const url = item?.url || project.links?.link || project.links?.live || project.links?.repo;
+    const url =
+      item?.url ||
+      project.links?.live ||
+      project.links?.link ||
+      project.links?.repo;
     return url ? openExternalTab(url) : openNotes(name || "URL", "No URL configured for this project.");
   }
 
@@ -90,7 +94,11 @@ export function tryOpenProjectVirtualItem({
   // Special handling for live demo links or video files, prioritizing YouTube demos if configured.
   const isLiveDemoVideoFile = /_live_demo\.mp4$/i.test(name.trim());
   if (lower === "live_demo_link.txt" || isLiveDemoVideoFile) {
-    const candidate = project.demoYoutubeUrl || project.demoYoutubeId || project.links?.youtube || project.links?.live;
+    const candidate =
+      project.demoYoutubeUrl ||
+      project.demoYoutubeId ||
+      project.links?.demo ||
+      project.links?.youtube;
     const youtubeId = parseYouTubeVideoId(candidate);
 
     if (youtubeId && canOpenInApp) {
@@ -102,10 +110,21 @@ export function tryOpenProjectVirtualItem({
       return true;
     }
 
-    const live = project.links?.live;
+    // Back-compat: older project entries used links.live for the YouTube URL.
+    const youtubeFromLive = parseYouTubeVideoId(project.links?.live);
+    if (youtubeFromLive && canOpenInApp) {
+      updateWindowPath("youtube", String(project.links?.live || youtubeFromLive), {
+        title: `${project.name || "Project"} Demo`,
+        videoId: youtubeFromLive,
+      });
+      onOpenWindow("youtube");
+      return true;
+    }
+
+    const live = project.links?.live || project.links?.link;
     if (live) return openExternalTab(live);
 
-    return openNotes(name || "Live demo", "No YouTube demo configured for this project.");
+    return openNotes(name || "Demo", "No YouTube demo configured for this project.");
   }
 
   if (isImageName(lower)) {

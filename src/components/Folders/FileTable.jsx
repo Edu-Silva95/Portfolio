@@ -1,8 +1,41 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { calculateFolderSize, formatBytes } from "../../utils/folderSizes";
 
-const FileTable = ({ items = [], onItemClick, onItemDoubleClick, viewMode = "list", actions = null, onItemContextMenu = null, selectedIds = [], onSelectionChange = null, enableMarqueeSelect = false }) => {
+const FileTable = ({
+  items = [],
+  currentPath = null,
+  pathMap = null,
+  onItemClick,
+  onItemDoubleClick,
+  viewMode = "list",
+  actions = null,
+  onItemContextMenu = null,
+  selectedIds = [],
+  onSelectionChange = null,
+  enableMarqueeSelect = false,
+}) => {
   const containerRef = useRef(null);
   const [marquee, setMarquee] = useState(null);
+
+  const folderSizeCacheRef = useRef(new Map());
+
+  useEffect(() => {
+    folderSizeCacheRef.current.clear();
+  }, [pathMap]);
+
+  const getItemSizeLabel = (item) => {
+    if (!item?.isFolder) return item?.size;
+    if (!currentPath || !pathMap) return item?.size;
+
+    const folderPath = `${currentPath} > ${item.name}`;
+    const cache = folderSizeCacheRef.current;
+    if (cache.has(folderPath)) return cache.get(folderPath);
+
+    const bytes = calculateFolderSize(folderPath, pathMap);
+    const label = bytes > 0 ? formatBytes(bytes) : (item?.size ?? "—");
+    cache.set(folderPath, label);
+    return label;
+  };
 
   // Track the marquee rectangle while dragging.
   const updateMarquee = (startX, startY, endX, endY) => {
@@ -181,7 +214,7 @@ const FileTable = ({ items = [], onItemClick, onItemDoubleClick, viewMode = "lis
                 <span>{item.name}</span>
               </td>
               <td>{item.type}</td>
-              <td className="text-right text-white/70">{item.size}</td>
+              <td className="text-right text-white/70">{getItemSizeLabel(item)}</td>
               {actions && <td className="text-right pr-2">{actions(item)}</td>}
             </tr>
               );

@@ -66,9 +66,10 @@ export function buildProjectReadme(project) {
   }
 
   const links = project.links || {};
-  if (links.live || links.repo || links.link) {
+  if (links.live || links.demo || links.repo || links.link) {
     lines.push("\n## Links\n");
     if (links.live) lines.push(`- Live: ${links.live}`);
+    if (links.demo) lines.push(`- Demo: ${links.demo}`);
     if (links.repo) lines.push(`- Repo: ${links.repo}`);
     if (links.link) lines.push(`- Link: ${links.link}`);
   }

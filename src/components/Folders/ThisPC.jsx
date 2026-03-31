@@ -263,6 +263,8 @@ export default function ThisPC({ onClose, onMinimize, minimized = false, minimiz
                 <h3 className="text-sm font-semibold mb-3 text-white/80">Folders</h3>
                 <FileTable
                   items={filteredFolders}
+                  currentPath={"This PC"}
+                  pathMap={fileTree}
                   {...createTableProps((item, e) => openContextMenuForItem("This PC", "folders", item, e))}
                 />
               </div>
@@ -270,6 +272,8 @@ export default function ThisPC({ onClose, onMinimize, minimized = false, minimiz
                 <h3 className="text-sm font-semibold mb-3 text-white/80">Devices and drives</h3>
                 <FileTable
                   items={filteredDrives}
+                  currentPath={"This PC"}
+                  pathMap={fileTree}
                   {...createTableProps((item, e) => openContextMenuForItem("This PC", "drives", item, e))}
                 />
               </div>
@@ -292,6 +296,8 @@ export default function ThisPC({ onClose, onMinimize, minimized = false, minimiz
           ) : (
             <FileTable
               items={filteredContent}
+              currentPath={currentPath}
+              pathMap={fileTree}
               {...createTableProps((item, e) => openContextMenuForItem(currentPath, "content", item, e))}
             />
           )}

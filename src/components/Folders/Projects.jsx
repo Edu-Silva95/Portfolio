@@ -174,6 +174,8 @@ export default function ProjectsFolder({
         <div className="flex-1 overflow-auto min-h-0 folder-scroll">
           <FileTable
             items={filteredItems}
+            currentPath={globalPath}
+            pathMap={fileTree}
             viewMode={viewMode}
             selectedIds={selectedIds}
             onSelectionChange={setSelectedIds}

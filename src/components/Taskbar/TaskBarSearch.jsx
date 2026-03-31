@@ -2,7 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import useNewsFeed from "../../hooks/useNewsFeed";
 
-export default function TaskBarSearch({ onOpenWindow = () => { }, onClearSelection = () => { } }) {
+export default function TaskBarSearch({
+  onOpenWindow = () => { },
+  onClearSelection = () => { },
+  updateWindowPath = null,
+}) {
   // Search input and open/close animation state for the search panel.
   const [query, setQuery] = useState("");
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -34,7 +38,12 @@ export default function TaskBarSearch({ onOpenWindow = () => { }, onClearSelecti
       title: "Suggested",
       items: [
         { label: "Curriculum_Vitae_2026.pdf", icon: "/icons/pdf-file-format.ico", windowId: "cv" },
-        { label: "Projects", icon: "/icons/icons8-folder-94.png", windowId: "projects" },
+        {
+          label: "Projects",
+          icon: "/icons/icons8-folder-94.png",
+          windowId: "documents",
+          targetPath: "Documents > Projects",
+        },
         { label: "Browser", icon: "/icons/chrome.png", windowId: "browser" },
         { label: "MyNotes", icon: "/icons/notepad.ico", windowId: "notes" },
       ],
@@ -79,8 +88,7 @@ export default function TaskBarSearch({ onOpenWindow = () => { }, onClearSelecti
     const allItems = sections.flatMap((section) => section.items);
     const exactMatch = allItems.find((item) => item.label.toLowerCase() === trimmed.toLowerCase());
     if (exactMatch?.windowId) {
-      onOpenWindow(exactMatch.windowId);
-      closeSearchPanel();
+      handleSelectItem(exactMatch);
       return;
     }
 
@@ -169,8 +177,20 @@ export default function TaskBarSearch({ onOpenWindow = () => { }, onClearSelecti
   };
 
   // Opens a window from Search and closes the panel.
-  const handleSelectItem = (windowId) => {
+  const buildHistoryFromPath = (path) => {
+    const parts = String(path || "").split(" > ").filter(Boolean);
+    return parts.map((_, idx) => parts.slice(0, idx + 1).join(" > "));
+  };
+
+  const handleSelectItem = (itemOrWindowId) => {
+    const item = typeof itemOrWindowId === "object" && itemOrWindowId ? itemOrWindowId : null;
+    const windowId = item ? (item.targetWindowId || item.windowId) : String(itemOrWindowId || "");
+    if (!windowId) return;
+
     onOpenWindow(windowId);
+    if (item?.targetPath && typeof updateWindowPath === "function") {
+      updateWindowPath(windowId, item.targetPath, buildHistoryFromPath(item.targetPath));
+    }
     closeSearchPanel();
   };
 
@@ -181,14 +201,14 @@ export default function TaskBarSearch({ onOpenWindow = () => { }, onClearSelecti
     setItemMenu({
       x: event.clientX,
       y: event.clientY,
-      windowId: item.windowId,
+      item,
     });
   };
 
   // Context-menu action for app shortcuts.
   const handleOpenFromContext = () => {
-    if (!itemMenu?.windowId) return;
-    handleSelectItem(itemMenu.windowId);
+    if (!itemMenu?.item) return;
+    handleSelectItem(itemMenu.item);
   };
 
   // Opens live news links in a new browser tab.
@@ -210,7 +230,7 @@ export default function TaskBarSearch({ onOpenWindow = () => { }, onClearSelecti
   const renderRecentListItem = (item) => (
     <button
       key={item.label}
-      onClick={() => handleSelectItem(item.windowId)}
+      onClick={() => handleSelectItem(item)}
       onContextMenu={(e) => openItemContextMenu(e, item)}
       className="w-full h-11 px-3 rounded-lg hover:bg-white/15 transition flex items-center gap-3 text-sm text-white/90 text-left cursor-pointer ml-2"
     >
@@ -223,7 +243,7 @@ export default function TaskBarSearch({ onOpenWindow = () => { }, onClearSelecti
   const renderGridItem = (item) => (
     <button
       key={item.label}
-      onClick={() => handleSelectItem(item.windowId)}
+      onClick={() => handleSelectItem(item)}
       onContextMenu={(e) => openItemContextMenu(e, item)}
       className="h-20 hover:bg-white/15 bg-gray-700/30 rounded-xl border border-white/10 transition flex flex-col items-center justify-center gap-1 text-xs text-white/90 cursor-pointer"
     >
@@ -262,7 +282,7 @@ export default function TaskBarSearch({ onOpenWindow = () => { }, onClearSelecti
         <div
           id="taskbar-search-panel"
           ref={panelRef}
-          className={`absolute bottom-14 left-0 w-[700px] h-[650px] overflow-hidden bg-gray-800 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-4 mb-0.5 transition-all duration-300 ease-out ${isPanelVisible ? "translate-y-0 opacity-100" : isPanelOpen ? "translate-y-24 opacity-0 pointer-events-none" : "translate-y-4 opacity-0 pointer-events-none"}`}
+          className={`absolute bottom-14 left-0 w-[700px] h-[610px] overflow-hidden bg-gray-800 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-4 mb-0.5 transition-all duration-300 ease-out ${isPanelVisible ? "translate-y-0 opacity-100" : isPanelOpen ? "translate-y-24 opacity-0 pointer-events-none" : "translate-y-4 opacity-0 pointer-events-none"}`}
         >
           {/* Two-column content: Recent + News (left), Suggested + Games (right). */}
           <div className="grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-10">

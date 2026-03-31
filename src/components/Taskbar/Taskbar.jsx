@@ -275,7 +275,7 @@ export default function Taskbar({
   const recommendedItems = [
     { label: "Documents", icon: "/icons/icons8-folder-94.png", action: () => onOpenWindow("documents") },
     { label: "Curriculum_Vitae_2026.pdf", icon: "/icons/pdf-file-format.ico", action: () => onOpenWindow("cv") },
-    { label: "Projects", icon: "/icons/icons8-folder-94.png", action: () => onOpenWindow("projects") },
+    { label: "Projects", icon: "/icons/icons8-folder-94.png", action: () => openDocumentsFolder("Documents > Projects") },
     { label: "Project Info", icon: "/icons/icons8-folder-94.png", action: () => onOpenWindow("about") },
   ];
   
@@ -410,7 +410,7 @@ export default function Taskbar({
             )}
           </div>
 
-          <TaskBarSearch onOpenWindow={onOpenWindow} onClearSelection={onClearSelection} />
+          <TaskBarSearch onOpenWindow={onOpenWindow} onClearSelection={onClearSelection} updateWindowPath={updateWindowPath} />
         </div>
 
         {/* RIGHT SIDE — Taskbar window buttons + Tray + Clock */}

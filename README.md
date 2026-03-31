@@ -12,6 +12,7 @@ A OS/Desktop-like portfolio web app built with React, Vite, and Tailwind CSS. Ex
 - PDF viewer and notepad
 - Custom context menus and taskbar
 - Responsive design
+- Dynamic Folder Sizes
 
 ## Tech Stack
 - React

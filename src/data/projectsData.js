@@ -11,7 +11,15 @@ export const projectsData = [
       "The backend was built with Ruby on Rails and PostgreSQL, providing structured data persistence and secure user authentication.",
       "The frontend uses HTML, SCSS, and JavaScript to deliver a simple and responsive user interface.",
     ],
-    tech: ["Ruby on Rails", "PostgreSQL", "JavaScript", "SCSS", "Fly.io", "Hotwire (Turbo + Stimulus)", "Devise"],
+    tech: [
+      "Ruby on Rails",
+      "PostgreSQL",
+      "JavaScript",
+      "SCSS",
+      "Fly.io",
+      "Hotwire (Turbo + Stimulus)",
+      "Devise",
+    ],
     features: [
       "User account registration and authentication",
       "Map showing the 5 closest supermarkets based on the user's location",
@@ -35,11 +43,10 @@ export const projectsData = [
     folderPath:
       "This PC > Documents > Projects > Full-Stack Projects > ShopListy",
     links: {
-      live: "https://youtu.be/ZTr1KtXVHO4",
+      demo: "https://youtu.be/ZTr1KtXVHO4",
       repo: "https://github.com/Edu-Silva95/ShopListy",
-      link: "shoplisty.space",
+      live: "shoplisty.space",
     },
-    screenshots: [],
   },
   {
     id: "chefie",
@@ -48,7 +55,15 @@ export const projectsData = [
     role: "Full-stack developer (solo project)",
     description:
       "Chefie is a full-stack recipe sharing platform where users can create, discover, and interact with recipes, courses, and community discussions. The project focuses on building a scalable social-style application using Rails, including authentication, content creation, and real-time UI updates with Hotwire. A key challenge was implementing persistent media storage using Cloudflare R2 to handle Fly.io’s ephemeral filesystem.",
-    tech: [ "Ruby on Rails 7", "PostgreSQL", "Hotwire (Turbo + Stimulus)", "SCSS", "Active Storage", "Cloudflare R2 (S3-compatible)", "Fly.io"],
+    tech: [
+      "Ruby on Rails 7",
+      "PostgreSQL",
+      "Hotwire (Turbo + Stimulus)",
+      "SCSS",
+      "Active Storage",
+      "Cloudflare R2 (S3-compatible)",
+      "Fly.io",
+    ],
     features: [
       "Authentication & account management (Devise)",
       "Recipe system: create, browse, search, categorize, and rate recipes",
@@ -57,7 +72,7 @@ export const projectsData = [
       "Social interactions: likes (posts/courses/replies) and comments",
       "Communities: topics, threaded replies, and search",
       "Pagination and search across multiple resources",
-      "Image uploads for avatars and recipes via Active Storage"
+      "Image uploads for avatars and recipes via Active Storage",
     ],
     highlights: [
       "Designed and built a full-stack social platform with Rails 7, modeling complex relationships (users, recipes, posts, communities, and interactions)",
@@ -66,15 +81,14 @@ export const projectsData = [
       "Developed polymorphic associations for likes and interactions across different models",
       "Integrated Hotwire (Turbo/Stimulus) for dynamic UI updates without heavy frontend frameworks",
       "Handled production deployment challenges including background jobs, asset precompilation, and external storage integration",
-      "Structured a modular Rails codebase with clean separation of concerns and reusable components"
+      "Structured a modular Rails codebase with clean separation of concerns and reusable components",
     ],
     folderPath: "This PC > Documents > Projects > Full-Stack Projects > Chefie",
     links: {
-      live: "https://youtu.be/omJfPkr3jys",
+      demo: "https://youtu.be/omJfPkr3jys",
       repo: "https://github.com/Edu-Silva95/Chefie",
-      link: "https://chefie-dry-sound-571.fly.dev/",
+      live: "https://chefie-dry-sound-571.fly.dev/",
     },
-    screenshots: [],
   },
   {
     id: "foodie",
@@ -85,35 +99,47 @@ export const projectsData = [
     tech: ["React.js", "Node.js", "Tailwind CSS"],
     folderPath: "This PC > Documents > Projects > Full-Stack Projects > Foodie",
     links: {
-      live: "",
+      demo: "",
       repo: "https://github.com/Edu-Silva95/Foodie",
+      live: "",
     },
-    screenshots: [],
   },
   {
     id: "super-simple-list",
     name: "Super Simple List",
-    tagline: "Simple shopping list app",
+    tagline: "A minimal full-stack shopping list app with persistent data",
     description:
-      "A Full-Stack web app using MongoDB. A simple grocery list app where the user can add and remove items.",
-    tech: ["React.js", "Typescript", "MongoDB", "Vercel", "CSS"],
+      "A full-stack web application that allows users to create and manage shopping lists, with persistent data stored in MongoDB.",
+    tech: ["React", "TypeScript", "MongoDB", "CSS", "Vercel", "Render"],
+    features: [
+      "Full CRUD functionality for lists and items",
+      "Dynamic item management within each list",
+      "Persistent storage using MongoDB",
+      "RESTful API built with Node.js and Express",
+      "Deployed frontend and backend on separate platforms",
+    ],
+    highlights: [
+      "Built and connected a full-stack architecture using a React frontend and Node.js/Express backend",
+      "Handled asynchronous data flow between client and server",
+      "Designed a clean and intuitive UI focused on usability",
+      "Deployed and configured separate frontend and backend services using modern cloud platforms",
+    ],
     folderPath:
       "This PC > Documents > Projects > Full-Stack Projects > Super Simple List",
     links: {
-      live: "",
+      demo: "https://youtu.be/wtA8UH3oBGM",
       repo: "https://github.com/Edu-Silva95/Super-Simple-List",
-      link: "https://super-simple-list.vercel.app/",
+      live: "https://super-simple-list.vercel.app/",
     },
-    screenshots: [],
   },
   {
     id: "portfolio",
     name: "Portfolio",
     tagline: "Desktop-style interactive portfolio",
-    description:[
+    description: [
       "An interactive portfolio that mimics a Windows desktop experience: icons, folders, a taskbar, and multi-window apps.",
       "Built with React + Vite and styled with Tailwind CSS.",
-      "The structure is data-driven, so I can add projects and content by updating configuration instead of rewriting UI logic.", 
+      "The structure is data-driven, so I can add projects and content by updating configuration instead of rewriting UI logic.",
       "Deployed on Vercel and iterated continuously as I polish the UX.",
     ],
     tech: [
@@ -140,11 +166,9 @@ export const projectsData = [
     folderPath:
       "This PC > Documents > Projects > Front-End Projects > Portfolio",
     links: {
-      live: "",
       repo: "https://github.com/Edu-Silva95/Portfolio",
-      link: "https://portfolio-hazel-psi-92.vercel.app/",
+      live: "https://portfolio-hazel-psi-92.vercel.app/",
     },
-    screenshots: [],
   },
 ];
 
