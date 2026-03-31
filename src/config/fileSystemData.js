@@ -34,7 +34,8 @@ const projectUrlItem = (projectId) => {
   if (!url) return [];
   return [
     {
-      name: project?.name || "Project",
+      id: `${projectId}-live-url`,
+      name: project?.name ? `${project.name} Live Site.url` : "Live Site.url",
       icon: "/icons/url.png",
       type: "URL",
       size: "1 KB",
