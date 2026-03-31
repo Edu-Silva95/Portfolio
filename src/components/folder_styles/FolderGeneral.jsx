@@ -177,12 +177,13 @@ export default function FolderGeneral({ title, icon = null, children, onClose, o
       }}
       bounds="parent"
       dragHandleClassName="window-title"
+      cancel=".window-controls, .window-controls *"
       enableResizing={!isMaximized}
       disableDragging={isMaximized}
       style={{ zIndex, ...(cursor ? { cursor } : null) }}
     >
       <div
-        onMouseDown={bringToFront}
+        onPointerDown={bringToFront}
         className={`bg-gray-900 text-white w-full h-full overflow-hidden shadow-xl flex flex-col origin-center will-change-transform transition-all duration-230 ease-[cubic-bezier(0.16,1,0.3,1)] ${closing ? "translate-y-2 opacity-0 scale-95 pointer-events-none" : minimizing ? "translate-y-3 opacity-0 scale-95 pointer-events-none" : hasEntered ? "translate-y-0 opacity-100 scale-100" : "translate-y-3 opacity-0 scale-95"} ${isMaximized ? "rounded-none shadow-none" : "rounded-xl"}`}
       >
         <div
@@ -201,8 +202,9 @@ export default function FolderGeneral({ title, icon = null, children, onClose, o
             <strong>{title}</strong>
           </div>
 
-          <div className="flex items-center gap-1 -mr-2">
+          <div className="window-controls flex items-center gap-1 -mr-2">
             <button
+              type="button"
               onClick={handleMinimize}
               aria-label="Minimize"
               className="px-3 py-2 hover:bg-white/10 rounded transition"
@@ -211,6 +213,7 @@ export default function FolderGeneral({ title, icon = null, children, onClose, o
             </button>
 
             <button
+              type="button"
               onClick={handleMaximizeToggle}
               aria-label="Maximize"
               className="px-3 py-2 hover:bg-white/10 rounded transition"
@@ -219,6 +222,7 @@ export default function FolderGeneral({ title, icon = null, children, onClose, o
             </button>
 
             <button
+              type="button"
               onClick={handleClose}
               aria-label="Close"
               className="px-3 py-2 hover:bg-red-600 rounded transition"
