@@ -324,7 +324,7 @@ export default function Taskbar({
                   {/* PINNED */}
                   <div>
                     <h3 className="text-sm font-semibold mb-3">Pinned</h3>
-                    <div className="grid grid-cols-5 gap-1">
+                    <div className="grid grid-cols-5 gap-x-1 gap-y-2">
                       {pinnedItems.map((item) => (
                         <button
                           key={item.label}
@@ -335,11 +335,13 @@ export default function Taskbar({
                           onContextMenu={(e) => openItemContextMenu(e, item)}
                           className="h-18 hover:bg-white/20
                                      rounded-xl transition
-                                     flex flex-col items-center justify-center gap-1 text-sm cursor-pointer"
+                                     flex flex-col items-center justify-start pt-2 gap-1 text-sm cursor-pointer"
                         >
-                          {renderMenuIcon(item, "w-8 h-8", "text-3xl")}
+                          <div className="w-8 h-8 flex items-center justify-center">
+                            {renderMenuIcon(item, "w-8 h-8", "text-3xl")}
+                          </div>
                           <span
-                            className="text-[11px] text-white/90 text-center leading-tight px-0.5 line-clamp-2 break-words max-w-full"
+                            className="text-[11px] text-white/90 text-center leading-tight px-0.5 line-clamp-2 break-words max-w-full min-h-8"
                             title={item.label}
                           >
                             {item.label}

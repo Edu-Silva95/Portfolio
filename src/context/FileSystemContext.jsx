@@ -139,50 +139,95 @@ export function FileSystemProvider({ children }) {
     });
   };
 
-  function createFolder(path, name = "New folder") {
-    console.log("createFolder called with path:", path);
+  function createFolder(path, name = "New folder", options = null) {
     setFileTree((prev) => {
       const entry = prev[path] || {};
 
+      const listKey = (path === "This PC" || Array.isArray(entry.folders)) ? "folders" : "content";
+      const currentList = Array.isArray(entry[listKey]) ? entry[listKey] : [];
+
+      const baseName = String(name || "New folder").trim() || "New folder";
+      const existingNames = new Set(currentList.map((it) => String(it?.name || "")));
+      let finalName = baseName;
+      if (existingNames.has(finalName)) {
+        let i = 2;
+        while (existingNames.has(`${baseName} (${i})`)) i += 1;
+        finalName = `${baseName} (${i})`;
+      }
+
+      const folderId = `folder-${Date.now()}`;
+      const newFolderPath = `${path} > ${finalName}`;
+
+      const isDesktop = path === "This PC > Desktop";
+      const desktopIcons = isDesktop
+        ? (Array.isArray(prev["This PC > Desktop"]?.content) ? prev["This PC > Desktop"].content : [])
+        : null;
+
+      const desiredPos = options?.position && Number.isFinite(options.position.x) && Number.isFinite(options.position.y)
+        ? { x: options.position.x, y: options.position.y }
+        : null;
+
+      const resolveDesktopPosition = () => {
+        if (!isDesktop) return null;
+        const existing = Array.isArray(desktopIcons) ? desktopIcons : [];
+        const occupied = new Set(existing.map((it) => `${it?.x}:${it?.y}`));
+
+        if (!desiredPos) return findFreePosition(existing);
+
+        const ICON_W = 100;
+        const ICON_H = 96;
+        const PADDING_X = 1;
+        const PADDING_Y = 1;
+        const maxX = window.innerWidth - ICON_W - 8;
+        const maxY = window.innerHeight - ICON_H - 80;
+        const clampedX = Math.min(Math.max(0, desiredPos.x), maxX);
+        const clampedY = Math.min(Math.max(0, desiredPos.y), maxY);
+        const col = Math.max(0, Math.round((clampedX - PADDING_X) / ICON_W));
+        const row = Math.max(0, Math.round((clampedY - PADDING_Y) / ICON_H));
+        const nx = PADDING_X + col * ICON_W;
+        const ny = PADDING_Y + row * ICON_H;
+
+        if (!occupied.has(`${nx}:${ny}`)) return { x: nx, y: ny };
+        return findFreePosition(existing);
+      };
+
+      const pos = isDesktop ? resolveDesktopPosition() : null;
+
+      // Single canonical folder item (also used as desktop icon when created on Desktop).
       const newFolder = {
-        id: `folder-${Date.now()}`,
-        name,
+        id: folderId,
+        name: finalName,
+        label: finalName,
         icon: "/icons/icons8-folder-94.png",
         type: "Folder",
         size: "—",
         isFolder: true,
+        isOpenable: true,
+        ...(isDesktop
+          ? {
+              x: pos.x,
+              y: pos.y,
+              targetWindowId: "thispc",
+              targetPath: newFolderPath,
+            }
+          : null),
       };
 
-      // If the path is the root "This PC" or the entry uses a `folders` list, add to folders.
-      if (path === "This PC" || Array.isArray(entry.folders)) {
-        const current = Array.isArray(entry.folders) ? entry.folders : [];
-        return {
-          ...prev,
-          [path]: {
-            ...entry,
-            folders: [newFolder, ...current],
-          },
-        };
-      }
-
-      // Default: add to content array for regular folder paths
-      const current = Array.isArray(entry.content) ? entry.content : [];
-      return {
+      const nextTree = {
         ...prev,
         [path]: {
           ...entry,
-          content: [newFolder, ...current],
+          [listKey]: [newFolder, ...currentList],
         },
       };
-    });
 
-    // If the new folder was created on the Desktop, also create a desktop icon
-    if (path === "This PC > Desktop") {
-      const pos = findFreePosition(getDesktopIcons());
-      const id = `desktop-${Date.now()}`;
-      const iconObj = { id, name, label: name, icon: "/icons/icons8-folder-94.png", isFolder: true, x: pos.x, y: pos.y };
-      setDesktopIcons((prev) => [iconObj, ...(prev || [])]);
-    }
+      // Ensure the new folder path exists, so opening it shows an empty folder (instead of falling back to This PC root).
+      if (!nextTree[newFolderPath]) {
+        nextTree[newFolderPath] = { content: [] };
+      }
+
+      return nextTree;
+    });
   }
 
   function handleContextMenu(e, currentPath, onContextMenuRequested) {

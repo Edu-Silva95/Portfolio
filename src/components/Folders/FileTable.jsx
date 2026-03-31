@@ -223,8 +223,8 @@ const FileTable = ({
         <thead className="border-b border-white/10">
           <tr className="text-left">
             <th className="pb-2 font-semibold px-2">Name</th>
-            <th className="pb-2 font-semibold pl-4 pr-2 md:px-2">Type</th>
-            <th className="pb-2 font-semibold px-2 text-right">Size</th>
+            <th className="pb-2 font-semibold pl-4 pr-2 md:px-2 text-center">Type</th>
+            <th className="pb-2 font-semibold px-2 text-center">Size</th>
             {actions && <th className="pb-2 font-semibold px-2 text-right"> </th>}
           </tr>
         </thead>
@@ -255,10 +255,10 @@ const FileTable = ({
                   <span className="min-w-0 truncate">{item.name}</span>
                 </div>
               </td>
-              <td className="pl-4 pr-2 md:px-2 overflow-hidden">
+              <td className="pl-4 pr-2 md:px-2 overflow-hidden text-center">
                 <span className="block truncate">{item.type}</span>
               </td>
-              <td className="px-2 text-right text-white/70 overflow-hidden">
+              <td className="px-2 text-center text-white/70 overflow-hidden">
                 <span className="block truncate">{getItemSizeLabel(item)}</span>
               </td>
               {actions && <td className="px-2 text-right">{actions(item)}</td>}

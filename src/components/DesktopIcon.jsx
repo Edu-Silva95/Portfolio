@@ -56,6 +56,11 @@ export default function DesktopIcon({
   }
 
   function onPointerDown(e) {
+    // On mobile, prevent the browser's native long-press behaviors (image preview / context menu).
+    if (isCoarsePointer()) {
+      e.preventDefault();
+    }
+
     const rect = elRef.current?.parentElement?.getBoundingClientRect();
     if (!rect) return;
 
@@ -170,7 +175,7 @@ export default function DesktopIcon({
     <div
       ref={elRef}
       data-selected={selected}
-      className={`flex flex-col items-center cursor-pointer select-none ${inline ? "relative" : "absolute"} rounded-md p-2 w-20 active:opacity-75 transition-all duration-150 ${
+      className={`no-touch-callout flex flex-col items-center cursor-pointer select-none ${inline ? "relative" : "absolute"} rounded-md p-2 w-20 active:opacity-75 transition-all duration-150 ${
         selected ? "bg-white/10 z-50" : "hover:bg-white/10"
       }`}
       onDoubleClick={() => {
@@ -199,6 +204,9 @@ export default function DesktopIcon({
         if (typeof onClick === "function") onClick();
       }}
       onContextMenu={(e) => {
+        // Always suppress the native context menu.
+        e.preventDefault();
+        e.stopPropagation();
         if (typeof onContextMenu === "function") onContextMenu(e);
       }}
       onPointerDown={!inline ? onPointerDown : undefined}
@@ -216,6 +224,10 @@ export default function DesktopIcon({
             className="w-full h-full object-contain"
             alt={label}
             onError={handleImgError}
+            draggable={false}
+            onContextMenu={(e) => {
+              e.preventDefault();
+            }}
           />
         ) : typeof resolvedIcon === "string" && resolvedIcon ? (
           <span className={inline ? "text-3xl" : "text-2xl"} aria-hidden="true">{resolvedIcon}</span>

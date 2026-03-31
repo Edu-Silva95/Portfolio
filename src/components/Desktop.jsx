@@ -60,11 +60,14 @@ export default function Desktop({
       if (!node) return;
       node.style.transform = "";
       node.style.willChange = "";
+      node.style.transition = "";
       node.style.opacity = "";
     });
     if (excludeId) {
       const dragged = host.querySelector(`[data-id="${excludeId}"]`);
-      if (dragged) dragged.style.opacity = "";
+      if (dragged) {
+        dragged.style.opacity = "";
+      }
     }
   };
 
@@ -76,6 +79,8 @@ export default function Desktop({
       const node = host.querySelector(`[data-id="${id}"]`);
       if (!node) return;
       node.style.willChange = "transform";
+      // Prevent Tailwind `transition-all` from animating the transform (looks like lag).
+      node.style.transition = "none";
       node.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
       node.style.opacity = "0.7";
     });

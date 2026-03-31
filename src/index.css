@@ -23,6 +23,13 @@ body {
   min-height: 100vh;
 }
 
+/* Prevent native mobile long-press callouts (Safari/Chrome) on desktop icons. */
+.no-touch-callout {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 .animated-desktop-bg {
   background: linear-gradient(135deg, #0c4a6e, #0f172a, #312e81, #0c4a6e);
   background-size: 400% 400%;
@@ -131,5 +138,29 @@ body {
 
 .folder-scroll::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+/* Taskbar: prevent browser default focus/tap highlight (blue flash) for immersion. */
+#taskbar {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#taskbar button,
+#taskbar button * {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+#taskbar button:focus,
+#taskbar button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+#taskbar img {
+  -webkit-user-drag: none;
+  user-select: none;
+  pointer-events: none;
 }
 
