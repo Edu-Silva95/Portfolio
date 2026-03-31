@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFileSystem } from "../../context/FileSystemContext";
+import useLongPressContextMenu from "../../hooks/useLongPressContextMenu";
 import Window from "../folder_styles/FolderGeneral";
 import FileTable from "./FileTable";
 import FolderToolbar from "./FolderToolbar";
@@ -46,9 +47,25 @@ export default function Documents({
   const [selectedIds, setSelectedIds] = useState([]);
 
   const { fileTree, setFileTree, handleContextMenu } = useFileSystem();
-
   const globalPath = currentPath.startsWith("This PC") ? currentPath : `This PC > ${currentPath}`;
   const currentContent = fileTree[globalPath]?.content || [];
+
+  const backgroundLongPress = useLongPressContextMenu({
+    enabled: !!onContextMenuRequested,
+    ignoreClosestSelector: "[data-file-id]",
+    onLongPress: ({ x, y }) => {
+      handleContextMenu?.(
+        {
+          clientX: x,
+          clientY: y,
+          preventDefault: () => { },
+          stopPropagation: () => { },
+        },
+        globalPath,
+        onContextMenuRequested
+      );
+    },
+  });
 
   // Update the list that matches the current path (mapped to global path keys).
   const updateCurrentList = useCallback((updater) => {
@@ -195,7 +212,17 @@ export default function Documents({
   };
 
   return (
-    <Window title={windowTitle} onClose={onClose} onMinimize={onMinimize} minimized={minimized} minimizing={minimizing} centered={centered} defaultWidth={defaultWidth} defaultHeight={defaultHeight} closing={closing}>
+    <Window
+      title={windowTitle}
+      onClose={onClose}
+      onMinimize={onMinimize}
+      minimized={minimized}
+      minimizing={minimizing}
+      centered={centered}
+      defaultWidth={defaultWidth}
+      defaultHeight={defaultHeight}
+      closing={closing}
+    >
       <div className="flex flex-col h-full">
         <FolderToolbar
           onBack={handleBack}
@@ -228,6 +255,8 @@ export default function Documents({
         ) : (
           <div
             className="flex-1 overflow-auto min-h-0 folder-scroll"
+            onClickCapture={backgroundLongPress.onClickCapture}
+            onPointerDownCapture={backgroundLongPress.onPointerDown}
             onContextMenu={(e) => {
               if (!onContextMenuRequested) return;
               handleContextMenu?.(e, globalPath, onContextMenuRequested);

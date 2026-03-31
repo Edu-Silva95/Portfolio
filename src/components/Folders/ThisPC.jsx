@@ -11,6 +11,7 @@ import { GamesContent } from "./Games";
 import { getProjectByFolderPath } from "../../data/projectsData";
 import { openExternalUrl } from "../../utils/externalUrl";
 import { tryOpenImagePlayer, tryOpenProjectVirtualItem } from "../../utils/folderOpenUtils";
+import useLongPressContextMenu from "../../hooks/useLongPressContextMenu";
 
 export default function ThisPC({ onClose, onMinimize, minimized = false, minimizing = false, onOpenWindow = () => { }, initialPath = "This PC", centered = false, defaultWidth = 700, defaultHeight = 420, windowId = "", updateWindowPath = null, savedPath = null, savedHistory = null, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, openableIds = [], closing = false }) {
   const { currentPath, pushPath, handleBack, handleForward, canGoBack, canGoForward } = useFolderNavigation({
@@ -30,6 +31,23 @@ export default function ThisPC({ onClose, onMinimize, minimized = false, minimiz
 
   const { fileTree, setFileTree, handleContextMenu } = useFileSystem();
   const currentData = fileTree[currentPath] || fileTree["This PC"];
+
+  const backgroundLongPress = useLongPressContextMenu({
+    enabled: !!onContextMenuRequested,
+    ignoreClosestSelector: "[data-file-id]",
+    onLongPress: ({ x, y }) => {
+      handleContextMenu?.(
+        {
+          clientX: x,
+          clientY: y,
+          preventDefault: () => { },
+          stopPropagation: () => { },
+        },
+        currentPath,
+        onContextMenuRequested
+      );
+    },
+  });
 
   // Shared search filter for folders/drives/content lists.
   const filterItems = (items = []) => {
@@ -251,6 +269,8 @@ export default function ThisPC({ onClose, onMinimize, minimized = false, minimiz
 
             <div
               className="flex flex-col flex-1 min-h-0 overflow-auto space-y-6 folder-scroll"
+              onClickCapture={backgroundLongPress.onClickCapture}
+              onPointerDownCapture={backgroundLongPress.onPointerDown}
               onContextMenu={(e) => {
                 if (!onContextMenuRequested) return;
                 // use centralized context menu handler so actions target the current path

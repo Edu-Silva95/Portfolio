@@ -15,7 +15,7 @@ export function parseSizeToBytes(sizeStr) {
 
   // Match: number + optional space + unit
   // Examples: "4 MB", "4.40 GB", "245KB", "476 GB free of 512 GB"
-  const match = raw.match(/(\d+(?:[\.,]\d+)?)\s*(b|kb|mb|gb|tb|pb)\b/i);
+  const match = raw.match(/(\d+(?:[.,]\d+)?)\s*(b|kb|mb|gb|tb|pb)\b/i);
   if (!match) return 0;
 
   const value = Number(String(match[1]).replace(",", "."));

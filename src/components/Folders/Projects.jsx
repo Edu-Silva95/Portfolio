@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFileSystem } from "../../context/FileSystemContext";
+import useLongPressContextMenu from "../../hooks/useLongPressContextMenu";
 import Window from "../folder_styles/FolderGeneral";
 import FolderToolbar from "./FolderToolbar";
 import FileTable from "./FileTable";
@@ -8,6 +9,8 @@ import { buildPathSegments } from "../../utils/folderPath";
 import { openExternalUrl } from "../../utils/externalUrl";
 import { getProjectByFolderPath } from "../../data/projectsData";
 import { tryOpenImagePlayer, tryOpenProjectVirtualItem } from "../../utils/folderOpenUtils";
+import { resolveThisPcPath, updateFileTreeList } from "../../utils/fileTreeUpdate";
+import { buildStandardItemContextMenu } from "../../utils/standardItemContextMenu";
 
 export default function ProjectsFolder({
   onClose,
@@ -46,16 +49,18 @@ export default function ProjectsFolder({
 
   const { fileTree, setFileTree } = useFileSystem();
 
-  const resolveGlobal = (p) => (p?.startsWith("This PC") ? p : `This PC > ${p}`);
-  const globalPath = resolveGlobal(currentPath);
+  const backgroundLongPress = useLongPressContextMenu({
+    enabled: !!onContextMenuRequested,
+    ignoreClosestSelector: "[data-file-id]",
+    onLongPress: ({ x, y }) => {
+      onContextMenuRequested?.({ x, y, targetId: null });
+    },
+  });
+
+  const globalPath = resolveThisPcPath(currentPath);
 
   const updateCurrentList = useCallback((updater) => {
-    setFileTree((prev) => {
-      const entry = prev[globalPath] ? { ...prev[globalPath] } : { content: [] };
-      const list = Array.isArray(entry.content) ? [...entry.content] : [];
-      const nextList = updater(list);
-      return { ...prev, [globalPath]: { ...entry, content: nextList } };
-    });
+    setFileTree((prev) => updateFileTreeList(prev, globalPath, "content", updater));
   }, [setFileTree, globalPath]);
 
   const filteredItems = useMemo(() => {
@@ -171,7 +176,11 @@ export default function ProjectsFolder({
           onViewModeChange={setViewMode}
         />
 
-        <div className="flex-1 overflow-auto min-h-0 folder-scroll">
+        <div
+          className="flex-1 overflow-auto min-h-0 folder-scroll"
+          onClickCapture={backgroundLongPress.onClickCapture}
+          onPointerDownCapture={backgroundLongPress.onPointerDown}
+        >
           <FileTable
             items={filteredItems}
             currentPath={globalPath}
@@ -185,17 +194,17 @@ export default function ProjectsFolder({
               if (!onContextMenuRequested) return;
               e.preventDefault();
               e.stopPropagation();
-              onContextMenuRequested({
-                x: e.clientX,
-                y: e.clientY,
-                targetId: null,
-                items: [
-                  { key: "open", label: "Open", onClick: () => handleItemDoubleClick(item) },
-                  { key: "shortcut", label: "Create shortcut", onClick: () => onCreateDesktopShortcut?.(item, currentPath) },
-                  { key: "rename", label: "Rename", onClick: () => handleRename(item) },
-                  { key: "delete", label: "Delete", onClick: () => handleDelete(item) },
-                ],
-              });
+              onContextMenuRequested(
+                buildStandardItemContextMenu({
+                  x: e.clientX,
+                  y: e.clientY,
+                  item,
+                  onOpen: handleItemDoubleClick,
+                  onCreateShortcut: () => onCreateDesktopShortcut?.(item, currentPath),
+                  onRename: handleRename,
+                  onDelete: handleDelete,
+                })
+              );
             }}
           />
         </div>

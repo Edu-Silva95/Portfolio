@@ -5,6 +5,9 @@ import FileTable from "../Folders/FileTable";
 import useFolderNavigation from "../../hooks/useFolderNavigation";
 import { buildPathSegments } from "../../utils/folderPath";
 import { useFileSystem } from "../../context/FileSystemContext";
+import useLongPressContextMenu from "../../hooks/useLongPressContextMenu";
+import { updateFileTreeList } from "../../utils/fileTreeUpdate";
+import { buildStandardItemContextMenu } from "../../utils/standardItemContextMenu";
 
 export default function ProjectInfo({
   onClose,
@@ -26,6 +29,23 @@ export default function ProjectInfo({
   const [selectedIds, setSelectedIds] = useState([]);
   const [itemCount, setItemCount] = useState(0);
   const { fileTree, setFileTree, handleContextMenu } = useFileSystem();
+
+  const backgroundLongPress = useLongPressContextMenu({
+    enabled: !!onContextMenuRequested,
+    ignoreClosestSelector: "[data-file-id]",
+    onLongPress: ({ x, y }) => {
+      handleContextMenu?.(
+        {
+          clientX: x,
+          clientY: y,
+          preventDefault: () => { },
+          stopPropagation: () => { },
+        },
+        currentPath,
+        onContextMenuRequested
+      );
+    },
+  });
 
   function handleOpen() {
     if (typeof onOpenReadme === "function") return onOpenReadme();
@@ -67,12 +87,7 @@ export default function ProjectInfo({
   };
 
   const updateCurrentList = (updater) => {
-    setFileTree((prev) => {
-      const entry = prev[currentPath] ? { ...prev[currentPath] } : { content: [] };
-      const list = Array.isArray(entry.content) ? [...entry.content] : [];
-      const next = updater(list);
-      return { ...prev, [currentPath]: { ...entry, content: next } };
-    });
+    setFileTree((prev) => updateFileTreeList(prev, currentPath, "content", updater));
   };
 
   const handleRename = (item) => {
@@ -102,17 +117,17 @@ export default function ProjectInfo({
 
   const openContextMenuForItem = (item, e) => {
     if (!onContextMenuRequested) return;
-    onContextMenuRequested({
-      x: e.clientX,
-      y: e.clientY,
-      targetId: null,
-      items: [
-        { key: "open", label: "Open", onClick: () => handleItemDoubleClick(item) },
-        { key: "shortcut", label: "Create shortcut", onClick: () => onCreateDesktopShortcut?.(item, currentPath) },
-        { key: "rename", label: "Rename", onClick: () => handleRename(item) },
-        { key: "delete", label: "Delete", onClick: () => handleDelete(item) },
-      ],
-    });
+    onContextMenuRequested(
+      buildStandardItemContextMenu({
+        x: e.clientX,
+        y: e.clientY,
+        item,
+        onOpen: handleItemDoubleClick,
+        onCreateShortcut: () => onCreateDesktopShortcut?.(item, currentPath),
+        onRename: handleRename,
+        onDelete: handleDelete,
+      })
+    );
   };
 
   const handleNavigatePath = (path) => {
@@ -165,6 +180,8 @@ export default function ProjectInfo({
 
         <div
           className="h-full min-h-0 overflow-hidden"
+          onClickCapture={backgroundLongPress.onClickCapture}
+          onPointerDownCapture={backgroundLongPress.onPointerDown}
           onContextMenu={(e) => {
             if (!onContextMenuRequested) return;
             handleContextMenu?.(e, currentPath, onContextMenuRequested);

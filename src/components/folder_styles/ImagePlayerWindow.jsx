@@ -33,7 +33,7 @@ export default function ImagePlayerWindow({
 
   return (
     <Window
-      title={"Image Player"}
+      title={title}
       icon={icon}
       onClose={onClose}
       onMinimize={onMinimize}

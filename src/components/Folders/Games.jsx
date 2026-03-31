@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import FileTable from "./FileTable";
 import { useFileSystem } from "../../context/FileSystemContext";
+import useLongPressContextMenu from "../../hooks/useLongPressContextMenu";
 
 export function GamesContent({ basePath = "This PC > Games", searchQuery = "", viewMode = "list", onCountChange, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, onOpenWindow = null, selectedIds: selectedIdsProp = null, onSelectionChange = null }) {
   const { fileTree, setFileTree, handleContextMenu } = useFileSystem();
@@ -24,7 +25,24 @@ export function GamesContent({ basePath = "This PC > Games", searchQuery = "", v
 
   const resolveGlobal = (p) => (p?.startsWith("This PC") ? p : `This PC > ${p}`);
   const globalBase = resolveGlobal(basePath);
-  const localGames = fileTree[globalBase]?.content || gamesContent;
+  const localGames = fileTree[globalBase]?.content || [];
+
+  const backgroundLongPress = useLongPressContextMenu({
+    enabled: !!onContextMenuRequested,
+    ignoreClosestSelector: "[data-file-id]",
+    onLongPress: ({ x, y }) => {
+      handleContextMenu?.(
+        {
+          clientX: x,
+          clientY: y,
+          preventDefault: () => { },
+          stopPropagation: () => { },
+        },
+        globalBase,
+        onContextMenuRequested
+      );
+    },
+  });
 
   const filteredContent = useMemo(() => {
     if (!searchQuery.trim()) return localGames;
@@ -116,6 +134,8 @@ export function GamesContent({ basePath = "This PC > Games", searchQuery = "", v
   return (
     <div
       className="flex-1 min-h-0 overflow-auto folder-scroll"
+      onClickCapture={backgroundLongPress.onClickCapture}
+      onPointerDownCapture={backgroundLongPress.onPointerDown}
       onContextMenu={(e) => {
         if (!onContextMenuRequested) return;
         handleContextMenu?.(e, globalBase, onContextMenuRequested);

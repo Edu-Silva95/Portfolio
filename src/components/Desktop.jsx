@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import DesktopIcon from "./DesktopIcon";
+import useLongPressContextMenu from "../hooks/useLongPressContextMenu";
+import useMarqueeSelect from "../hooks/useMarqueeSelect";
 
 export default function Desktop({
   icons = [],
@@ -15,10 +17,39 @@ export default function Desktop({
   doubleClickOnly = [],
 }) {
   const containerRef = useRef(null);
-  const [marquee, setMarquee] = useState(null);
   const suppressClickRef = useRef(false);
   const groupPreviewFrame = useRef(null);
   const groupPreviewNext = useRef(null);
+
+  const desktopLongPress = useLongPressContextMenu({
+    enabled: true,
+    ignoreClosestSelector: "[data-id]",
+    onLongPress: ({ x, y }) => {
+      onContextMenuRequested({ x, y, targetId: null });
+      suppressClickRef.current = true;
+      window.setTimeout(() => {
+        suppressClickRef.current = false;
+      }, 0);
+    },
+  });
+
+  const isCoarsePointer = () => {
+    if (typeof window === "undefined") return false;
+    const coarse = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
+    const touchPoints = typeof navigator !== "undefined" && (navigator.maxTouchPoints || 0) > 0;
+    return coarse || touchPoints;
+  };
+
+  const { marquee, onPointerDown, onPointerMove, onPointerUp } = useMarqueeSelect({
+    enabled: true,
+    containerRef,
+    itemSelector: "[data-id]",
+    getItemId: (node) => node?.getAttribute?.("data-id"),
+    onSelectionChange: onSelectMultiple,
+    onClearSelection,
+    isCoarsePointer,
+    suppressClickRef,
+  });
 
   const clearGroupPreview = (excludeId = null) => {
     const host = containerRef.current;
@@ -70,82 +101,6 @@ export default function Desktop({
     };
   }, []);
 
-  const updateMarquee = (startX, startY, endX, endY) => {
-    const x = Math.min(startX, endX);
-    const y = Math.min(startY, endY);
-    const width = Math.abs(endX - startX);
-    const height = Math.abs(endY - startY);
-    setMarquee({ startX, startY, x, y, width, height });
-  };
-
-  const selectInRect = (rect) => {
-    const host = containerRef.current;
-    if (!host) return;
-    const nodes = host.querySelectorAll("[data-id]");
-    const nextSelected = [];
-    nodes.forEach((node) => {
-      const id = node.getAttribute("data-id");
-      if (!id) return;
-      const box = node.getBoundingClientRect();
-      const intersects = box.left <= rect.right && box.right >= rect.left && box.top <= rect.bottom && box.bottom >= rect.top;
-      if (intersects) nextSelected.push(id);
-    });
-    onSelectMultiple(nextSelected);
-  };
-
-  const handlePointerDown = (e) => {
-    if (e.button !== 0) return;
-    if (e.target.closest("[data-id]")) return;
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    suppressClickRef.current = true;
-    const startX = e.clientX - rect.left;
-    const startY = e.clientY - rect.top;
-    updateMarquee(startX, startY, startX, startY);
-    onClearSelection();
-    e.currentTarget.setPointerCapture?.(e.pointerId);
-    e.preventDefault();
-  };
-
-  const handlePointerMove = (e) => {
-    if (!marquee) return;
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const endX = e.clientX - rect.left;
-    const endY = e.clientY - rect.top;
-    updateMarquee(marquee.startX, marquee.startY, endX, endY);
-    const selectionRect = {
-      left: rect.left + Math.min(marquee.startX, endX),
-      top: rect.top + Math.min(marquee.startY, endY),
-      right: rect.left + Math.max(marquee.startX, endX),
-      bottom: rect.top + Math.max(marquee.startY, endY),
-    };
-    selectInRect(selectionRect);
-  };
-
-  const handlePointerUp = (e) => {
-    if (!marquee) return;
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) {
-      setMarquee(null);
-      return;
-    }
-    const selectionRect = {
-      left: rect.left + marquee.x,
-      top: rect.top + marquee.y,
-      right: rect.left + marquee.x + marquee.width,
-      bottom: rect.top + marquee.y + marquee.height,
-    };
-    selectInRect(selectionRect);
-    if (marquee.width === 0 && marquee.height === 0) {
-      onClearSelection();
-    }
-    setMarquee(null);
-    window.setTimeout(() => {
-      suppressClickRef.current = false;
-    }, 0);
-    e.currentTarget.releasePointerCapture?.(e.pointerId);
-  };
 
   const handleIconMove = (id, nx, ny) => {
     const isGroup = selectedIds.includes(id) && selectedIds.length > 1;
@@ -171,6 +126,7 @@ export default function Desktop({
     <div
       ref={containerRef}
       className="relative w-full h-full"
+      onClickCapture={desktopLongPress.onClickCapture}
       onClick={() => {
         if (suppressClickRef.current) return;
         onClearSelection();
@@ -179,9 +135,10 @@ export default function Desktop({
         e.preventDefault();
         onContextMenuRequested({ x: e.clientX, y: e.clientY, targetId: null });
       }}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
+      onPointerDownCapture={desktopLongPress.onPointerDown}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
     >
       {marquee ? (
         <div

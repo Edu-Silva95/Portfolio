@@ -20,7 +20,32 @@ export default function DesktopIcon({
   const isImageIcon = typeof resolvedIcon === "string" && (resolvedIcon.includes("/") || resolvedIcon.includes(".") || resolvedIcon.startsWith("data:"));
   const [imgSrc, setImgSrc] = useState(() => (isImageIcon ? resolvedIcon : null));
   const elRef = useRef(null);
-  const dragState = useRef({ dragging: false, offsetX: 0, offsetY: 0 });
+  const lastTapRef = useRef({ at: 0 }); // for double-tap detection on touch devices
+  const dragState = useRef({
+    isDown: false,
+    dragging: false,
+    justDragged: false,
+    justLongPressed: false,
+    longPressTimer: null,
+    startClientX: 0,
+    startClientY: 0,
+    offsetX: 0,
+    offsetY: 0,
+  });
+
+  const isCoarsePointer = () => {
+    if (typeof window === "undefined") return false;
+    const coarse = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
+    const touchPoints = typeof navigator !== "undefined" && (navigator.maxTouchPoints || 0) > 0;
+    return coarse || touchPoints;
+  };
+
+  const clearLongPressTimer = () => {
+    if (dragState.current.longPressTimer) {
+      window.clearTimeout(dragState.current.longPressTimer);
+      dragState.current.longPressTimer = null;
+    }
+  };
 
   function handleImgError() {
     if (imgSrc && imgSrc !== "/icons/icons8-folder-94.png") {
@@ -37,32 +62,68 @@ export default function DesktopIcon({
     const offsetX = e.clientX - rect.left - x;
     const offsetY = e.clientY - rect.top - y;
 
-    dragState.current = { dragging: true, offsetX, offsetY };
+    dragState.current.isDown = true;
+    dragState.current.dragging = false;
+    dragState.current.startClientX = e.clientX;
+    dragState.current.startClientY = e.clientY;
+    dragState.current.offsetX = offsetX;
+    dragState.current.offsetY = offsetY;
 
-    // prepare for GPU-accelerated smooth movement
-    if (elRef.current) {
-      elRef.current.style.willChange = "transform";
-      elRef.current.style.transition = "none";
+    clearLongPressTimer();
+    if (isCoarsePointer() && typeof onContextMenu === "function") {
+      const startX = e.clientX;
+      const startY = e.clientY;
+      dragState.current.longPressTimer = window.setTimeout(() => {
+        if (!dragState.current.isDown) return;
+        if (dragState.current.dragging) return;
+        dragState.current.justLongPressed = true;
+        if (typeof onSelect === "function") onSelect();
+        onContextMenu({
+          clientX: startX,
+          clientY: startY,
+          preventDefault: () => { },
+          stopPropagation: () => { },
+        });
+        window.setTimeout(() => {
+          dragState.current.justLongPressed = false;
+        }, 0);
+      }, 1000);
     }
-
-    elRef.current?.setPointerCapture(e.pointerId);
-    e.preventDefault();
   }
 
   function onPointerMove(e) {
-    if (!dragState.current.dragging) return;
+    if (!dragState.current.isDown) return;
 
     const rect = elRef.current?.parentElement?.getBoundingClientRect();
     if (!rect) return;
+
+    if (!dragState.current.dragging) {
+      const dx0 = e.clientX - dragState.current.startClientX;
+      const dy0 = e.clientY - dragState.current.startClientY;
+      const dist = Math.hypot(dx0, dy0);
+      if (dist < 6) return;
+
+      clearLongPressTimer();
+
+      dragState.current.dragging = true;
+      dragState.current.justDragged = true;
+
+      // prepare for GPU-accelerated smooth movement
+      if (elRef.current) {
+        elRef.current.style.willChange = "transform";
+        elRef.current.style.transition = "none";
+      }
+
+      elRef.current?.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    }
 
     const nx = Math.max(0, e.clientX - rect.left - dragState.current.offsetX);
     const ny = Math.max(0, e.clientY - rect.top - dragState.current.offsetY);
 
     if (typeof onMove === "function") onMove(nx, ny);
 
-    // Move visually using transform so we avoid layout thrash and parent re-renders.
-    // The element is absolutely positioned at `left: x; top: y` by React props;
-    // we apply a relative translate so it appears to follow the cursor instantly.
+    // Move visually using transform to avoid layout thrash and parent re-renders.
     if (elRef.current) {
       const dx = nx - x;
       const dy = ny - y;
@@ -72,6 +133,11 @@ export default function DesktopIcon({
   }
 
   function onPointerUp(e) {
+    if (!dragState.current.isDown) return;
+    dragState.current.isDown = false;
+
+    clearLongPressTimer();
+
     if (!dragState.current.dragging) return;
     dragState.current.dragging = false;
     try {
@@ -94,6 +160,10 @@ export default function DesktopIcon({
     const ny = Math.max(0, Math.round(e.clientY - rect.top - dragState.current.offsetY));
 
     if (typeof onDrop === "function") onDrop(nx, ny);
+
+    window.setTimeout(() => {
+      dragState.current.justDragged = false;
+    }, 0);
   }
 
   return (
@@ -109,8 +179,24 @@ export default function DesktopIcon({
       }}
       onClick={(e) => {
         e.stopPropagation();
+        if (dragState.current.justDragged) return;
+        if (dragState.current.justLongPressed) return;
         if (typeof onSelect === "function") onSelect();
-        if (!inline && typeof onClick === "function") onClick();
+
+        if (inline) return;
+
+        const openFn = typeof onDoubleClick === "function" ? onDoubleClick : onClick;
+        if (typeof openFn !== "function") return;
+
+        if (isCoarsePointer()) {
+          const now = Date.now();
+          const isDoubleTap = now - lastTapRef.current.at < 350;
+          lastTapRef.current.at = now;
+          if (isDoubleTap) openFn();
+          return;
+        }
+
+        if (typeof onClick === "function") onClick();
       }}
       onContextMenu={(e) => {
         if (typeof onContextMenu === "function") onContextMenu(e);

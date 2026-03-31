@@ -1,25 +1,22 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import FileTable from "./FileTable";
 import { useFileSystem } from "../../context/FileSystemContext";
+import useLongPressContextMenu from "../../hooks/useLongPressContextMenu";
+import { resolveThisPcPath, updateFileTreeList } from "../../utils/fileTreeUpdate";
+import { buildStandardItemContextMenu } from "../../utils/standardItemContextMenu";
 
 export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery = "", viewMode = "list", onCountChange, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null }) {
   const { fileTree, setFileTree, handleContextMenu } = useFileSystem();
   const [selectedIds, setSelectedIds] = useState([]);
 
-  const resolveGlobal = (p) => (p?.startsWith("This PC") ? p : `This PC > ${p}`);
-  const globalBase = resolveGlobal(basePath);
-  const globalCurrent = resolveGlobal(currentPath);
+  const globalBase = resolveThisPcPath(basePath);
+  const globalCurrent = resolveThisPcPath(currentPath);
 
   const currentContent = fileTree[globalCurrent]?.content || fileTree[globalBase]?.content || [];
 
   // Update a specific path list in the shared file tree.
   const updateList = useCallback((targetGlobalPath, updater) => {
-    setFileTree((prev) => {
-      const entry = prev[targetGlobalPath] ? { ...prev[targetGlobalPath] } : { content: [] };
-      const list = Array.isArray(entry.content) ? [...entry.content] : [];
-      const nextList = updater(list);
-      return { ...prev, [targetGlobalPath]: { ...entry, content: nextList } };
-    });
+    setFileTree((prev) => updateFileTreeList(prev, targetGlobalPath, "content", updater));
   }, [setFileTree]);
 
   const filteredContent = useMemo(() => {
@@ -94,22 +91,41 @@ export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery
   // Right-click context menu for items.
   const openContextMenuForItem = (item, e) => {
     if (!onContextMenuRequested) return;
-    onContextMenuRequested({
-      x: e.clientX,
-      y: e.clientY,
-      targetId: null,
-      items: [
-        { key: "open", label: "Open", onClick: () => handleItemDoubleClick(item) },
-        { key: "shortcut", label: "Create shortcut", onClick: () => onCreateDesktopShortcut?.(item, globalCurrent) },
-        { key: "rename", label: "Rename", onClick: () => handleRename(item) },
-        { key: "delete", label: "Delete", onClick: () => handleDelete(item) },
-      ],
-    });
+    onContextMenuRequested(
+      buildStandardItemContextMenu({
+        x: e.clientX,
+        y: e.clientY,
+        item,
+        onOpen: () => handleItemDoubleClick(item),
+        onCreateShortcut: () => onCreateDesktopShortcut?.(item, globalCurrent),
+        onRename: () => handleRename(item),
+        onDelete: () => handleDelete(item),
+      })
+    );
   };
+
+  const backgroundLongPress = useLongPressContextMenu({
+    enabled: !!onContextMenuRequested,
+    ignoreClosestSelector: "[data-file-id]",
+    onLongPress: ({ x, y }) => {
+      handleContextMenu?.(
+        {
+          clientX: x,
+          clientY: y,
+          preventDefault: () => { },
+          stopPropagation: () => { },
+        },
+        globalCurrent,
+        onContextMenuRequested
+      );
+    },
+  });
 
   return (
     <div
       className="flex-1 overflow-auto folder-scroll"
+      onClickCapture={backgroundLongPress.onClickCapture}
+      onPointerDownCapture={backgroundLongPress.onPointerDown}
       onContextMenu={(e) => {
         if (!onContextMenuRequested) return;
         // use centralized context menu handler when available
