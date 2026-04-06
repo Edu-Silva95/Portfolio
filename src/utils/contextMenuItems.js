@@ -1,5 +1,5 @@
 import { openDesktopIcon } from "./desktopIconRouting";
-
+// This file builds the context menu items for desktop icons and the desktop background, centralizing all related logic in one place for better maintainability and separation of concerns.
 export const buildDesktopContextMenuItems = ({
   contextMenu,
   icons,

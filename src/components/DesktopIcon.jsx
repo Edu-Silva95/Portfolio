@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useFileSystem } from "../context/FileSystemContext";
 
 export default function DesktopIcon({
   id,
@@ -15,11 +16,15 @@ export default function DesktopIcon({
   selected = false,
   inline = false,
   isShortcut = false,
+  dragItemKeys = null,
+  onDragEnd = null,
 }) {
   const resolvedIcon = icon ?? `/icons/${id}.png`;
   const isImageIcon = typeof resolvedIcon === "string" && (resolvedIcon.includes("/") || resolvedIcon.includes(".") || resolvedIcon.startsWith("data:"));
   const [imgSrc, setImgSrc] = useState(() => (isImageIcon ? resolvedIcon : null));
   const elRef = useRef(null);
+  const { moveItems } = useFileSystem() || {};
+  const DND_MIME = "application/x-desktop-portfolio-fs-item";
   const lastTapRef = useRef({ at: 0 }); // for double-tap detection on touch devices
   const dragState = useRef({
     isDown: false,
@@ -32,6 +37,26 @@ export default function DesktopIcon({
     offsetX: 0,
     offsetY: 0,
   });
+
+  const resetDragVisual = () => {
+    clearLongPressTimer();
+    dragState.current.isDown = false;
+    dragState.current.dragging = false;
+    dragState.current.justLongPressed = false;
+    if (elRef.current) {
+      elRef.current.style.transform = "";
+      elRef.current.style.willChange = "";
+      elRef.current.style.transition = "";
+      elRef.current.style.zIndex = "";
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      resetDragVisual();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const isCoarsePointer = () => {
     if (typeof window === "undefined") return false;
@@ -117,6 +142,9 @@ export default function DesktopIcon({
       if (elRef.current) {
         elRef.current.style.willChange = "transform";
         elRef.current.style.transition = "none";
+        // Make sure the dragged icon stays above windows.
+        const base = typeof window !== "undefined" ? (window.__appZIndex || 1000) : 1000;
+        elRef.current.style.zIndex = String(base + 5000);
       }
 
       elRef.current?.setPointerCapture(e.pointerId);
@@ -156,6 +184,28 @@ export default function DesktopIcon({
       elRef.current.style.transform = "";
       elRef.current.style.willChange = "auto";
       elRef.current.style.transition = "";
+      elRef.current.style.zIndex = "";
+    }
+
+    if (typeof onDragEnd === "function") onDragEnd();
+
+    // If dropped over an open folder window / folder row (anything with data-drop-path), treat as a move.
+    // Important: ignore any drop targets that belong to the desktop itself to avoid interfering with normal rearranging.
+    try {
+      const dropNode = typeof document !== "undefined" ? document.elementFromPoint(e.clientX, e.clientY) : null;
+      const target = dropNode?.closest?.("[data-drop-path]");
+      const dropPath = target?.getAttribute?.("data-drop-path");
+      const onDesktop = !!dropNode?.closest?.('[data-desktop-root="1"]');
+      const keys = Array.isArray(dragItemKeys) && dragItemKeys.length > 0 ? dragItemKeys : [id];
+      if (!onDesktop && dropPath && dropPath !== "This PC > Desktop" && typeof moveItems === "function") {
+        moveItems({ fromPath: "This PC > Desktop", toPath: dropPath, itemKeys: keys });
+        window.setTimeout(() => {
+          dragState.current.justDragged = false;
+        }, 0);
+        return;
+      }
+    } catch {
+      // ignore
     }
 
     const rect = elRef.current?.parentElement?.getBoundingClientRect();
@@ -212,6 +262,8 @@ export default function DesktopIcon({
       onPointerDown={!inline ? onPointerDown : undefined}
       onPointerMove={!inline ? onPointerMove : undefined}
       onPointerUp={!inline ? onPointerUp : undefined}
+      onPointerCancel={!inline ? () => resetDragVisual() : undefined}
+      onLostPointerCapture={!inline ? () => resetDragVisual() : undefined}
       role="button"
       tabIndex={0}
       {...(!inline ? { style: { left: x, top: y } } : {})}

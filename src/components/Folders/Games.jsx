@@ -143,6 +143,8 @@ export function GamesContent({ basePath = "This PC > Games", searchQuery = "", v
     >
       <FileTable
         items={filteredContent}
+        currentPath={globalBase}
+        pathMap={fileTree}
         selectedIds={selectedIds}
         onSelectionChange={updateSelectedIds}
         onItemClick={(item) => updateSelectedIds([getItemKey(item)])}
@@ -150,6 +152,7 @@ export function GamesContent({ basePath = "This PC > Games", searchQuery = "", v
         onItemDoubleClick={handleOpen}
         enableMarqueeSelect
         onItemContextMenu={openContextMenuForItem}
+        enableDragDrop
       />
     </div>
   );

@@ -8,9 +8,9 @@ import useFolderNavigation from "../../hooks/useFolderNavigation";
 import { formatPath, getWindowTitle, buildPathSegments } from "../../utils/folderPath";
 import { PhotosContent } from "./Photos";
 import { GamesContent } from "./Games";
-import { getProjectByFolderPath } from "../../data/projectsData";
+import { resolveProjectForPath } from "../../utils/projectResolve";
 import { openExternalUrl } from "../../utils/externalUrl";
-import { tryOpenImagePlayer, tryOpenProjectVirtualItem } from "../../utils/folderOpenUtils";
+import { tryOpenImagePlayer, tryOpenProjectVirtualItem, tryOpenTargetWindowItem } from "../../utils/folderOpenUtils";
 
 export default function Documents({
   onClose,
@@ -112,6 +112,9 @@ export default function Documents({
 
   // Open folders or special files from the list.
   const handleItemDoubleClick = (item) => {
+    // Allow opening moved shortcuts (ex: Browser/DOOM) from inside any folder.
+    if (tryOpenTargetWindowItem({ item, onOpenWindow, updateWindowPath })) return;
+
     if (!item?.isFolder) {
       const itemType = String(item?.type || "").toLowerCase();
       if (itemType === "url" || item?.url) {
@@ -127,7 +130,7 @@ export default function Documents({
     if (tryOpenImagePlayer({ item, list: currentContent, onOpenWindow, updateWindowPath })) return;
 
     // If we're inside a project folder, allow opening its virtual files.
-    const project = getProjectByFolderPath(globalPath);
+    const project = resolveProjectForPath({ fileTree, globalPath });
     if (tryOpenProjectVirtualItem({ item, project, onOpenWindow, updateWindowPath })) return;
 
     if (item.isFolder) {
@@ -222,6 +225,7 @@ export default function Documents({
       defaultWidth={defaultWidth}
       defaultHeight={defaultHeight}
       closing={closing}
+      dropPath={globalPath}
     >
       <div className="flex flex-col h-full">
         <FolderToolbar
@@ -268,6 +272,7 @@ export default function Documents({
               pathMap={fileTree}
               {...sharedFileTableProps}
               onItemContextMenu={openContextMenuForItem}
+              enableDragDrop
             />
           </div>
         )}

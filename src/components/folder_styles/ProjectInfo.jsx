@@ -162,7 +162,7 @@ export default function ProjectInfo({
 
   return (
     <>
-    <Window title="📁 Project Info" onClose={onClose} onMinimize={onMinimize} minimized={minimized} minimizing={minimizing} closing={closing}>
+    <Window title="📁 Project Info" onClose={onClose} onMinimize={onMinimize} minimized={minimized} minimizing={minimizing} closing={closing} dropPath={currentPath}>
         <div className="flex flex-col h-full">
         <FolderToolbar
           onBack={handleBack}
@@ -190,6 +190,8 @@ export default function ProjectInfo({
           {filteredItems.length > 0 ? (
             <FileTable
               items={filteredItems}
+              currentPath={currentPath}
+              pathMap={fileTree}
               viewMode={viewMode}
               selectedIds={selectedIds}
               onSelectionChange={setSelectedIds}
@@ -197,6 +199,7 @@ export default function ProjectInfo({
               onItemDoubleClick={handleItemDoubleClick}
               onItemContextMenu={openContextMenuForItem}
               enableMarqueeSelect
+              enableDragDrop
             />
           ) : (
             <p className="text-white/60 text-sm px-2">No items match your search.</p>

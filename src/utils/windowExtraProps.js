@@ -4,7 +4,7 @@ const applySavedNavigation = (extraProps, win) => {
     extraProps.savedHistory = win.navigationHistory;
   }
 };
-
+// This file centralizes the logic for determining what extra props to pass to each window component based on its ID and state.
 export function buildWindowExtraProps({
   id,
   win,

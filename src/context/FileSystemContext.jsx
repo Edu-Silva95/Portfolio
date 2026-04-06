@@ -1,6 +1,7 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { pathMap as initialPathMap } from "../config/fileSystemData";
 import { initialIcons } from "../config/desktopConfig";
+import { moveFileTreeItems, resolveThisPcPath } from "../utils/fileTreeUpdate";
 
 const FileSystemContext = createContext(null);
 
@@ -65,7 +66,7 @@ export function FileSystemProvider({ children }) {
 
     // Ensure Desktop > Project Info has the Readme file
     const aboutReadmeKey = "This PC > Desktop > Project Info";
-    const readme = { id: "readme-file", name: "Readme.txt", icon: "/icons/document.png", type: "Text Document", size: "1 KB", isOpenable: true };
+    const readme = { id: "readme-file", name: "Readme.txt", icon: "/icons/document.png", type: "Text Document", size: "1 KB", isOpenable: true, path: "/files/Readme.txt", targetWindowId: "readme" };
     if (!tree[aboutReadmeKey]) tree[aboutReadmeKey] = { content: [readme] };
     else if (!Array.isArray(tree[aboutReadmeKey].content) || !tree[aboutReadmeKey].content.some((it) => it.name === "Readme.txt")) {
       tree[aboutReadmeKey].content = [readme, ...(tree[aboutReadmeKey].content || [])];
@@ -81,6 +82,38 @@ export function FileSystemProvider({ children }) {
 
     return tree;
   });
+
+  // One-time repair pass: ensure desktop items always have stable ids/labels.
+  // This fixes items moved before drag/drop normalization existed.
+  const didNormalizeDesktopRef = useRef(false);
+  useEffect(() => {
+    if (didNormalizeDesktopRef.current) return;
+    didNormalizeDesktopRef.current = true;
+
+    setFileTree((prev) => {
+      const entry = prev["This PC > Desktop"];
+      const list = Array.isArray(entry?.content) ? entry.content : [];
+      if (!list.length) return prev;
+
+      let changed = false;
+      const nextList = list.map((it) => {
+        const next = { ...it };
+        if (!next.id) {
+          const uuid = (typeof crypto !== "undefined" && crypto?.randomUUID) ? crypto.randomUUID() : null;
+          next.id = `item-${uuid || `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
+          changed = true;
+        }
+        if (!next.label && next.name) {
+          next.label = next.name;
+          changed = true;
+        }
+        return next;
+      });
+
+      if (!changed) return prev;
+      return { ...prev, ["This PC > Desktop"]: { ...(entry || {}), content: nextList } };
+    });
+  }, [setFileTree]);
 
   // Desktop helpers operate on `This PC > Desktop` content inside fileTree
   const getDesktopIcons = () => {
@@ -138,6 +171,71 @@ export function FileSystemProvider({ children }) {
       });
     });
   };
+
+  function moveItems({ fromPath, toPath, itemKeys, fromListKey = "content", toListKey = "content" } = {}) {
+    const resolvedTo = resolveThisPcPath(toPath);
+    const movingIntoDesktop = resolvedTo === "This PC > Desktop";
+
+    const ensureId = (item) => {
+      if (item?.id) return item.id;
+      // Use crypto when available for uniqueness; fall back to time+random.
+      const uuid = (typeof crypto !== "undefined" && crypto?.randomUUID) ? crypto.randomUUID() : null;
+      return `item-${uuid || `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
+    };
+
+    // Allocate desktop positions for moved items that don't already have x/y.
+    setFileTree((prev) => {
+      let workingDesktop = movingIntoDesktop
+        ? (Array.isArray(prev["This PC > Desktop"]?.content) ? [...prev["This PC > Desktop"].content] : [])
+        : null;
+
+      return moveFileTreeItems(prev, {
+        fromPath,
+        toPath,
+        itemKeys,
+        fromListKey,
+        toListKey,
+        transformMovedItem: (item, ctx) => {
+          const isDestDesktop = ctx?.toPath === "This PC > Desktop";
+          const next = { ...item };
+
+          // Desktop rendering expects stable ids.
+          if (isDestDesktop) {
+            next.id = ensureId(next);
+            if (!next.label) next.label = next.name;
+          }
+
+          // Be robust: some folder entries rely on `type` instead of `isFolder`.
+          const looksLikeFolder = !!(next.isFolder || String(next.type || "").toLowerCase() === "folder" || String(next.type || "").toLowerCase() === "file folder");
+          if (looksLikeFolder) next.isFolder = true;
+
+          if (looksLikeFolder) {
+            const newFolderPath = `${ctx.toPath} > ${ctx.newName}`;
+            if (isDestDesktop) {
+              next.targetWindowId = "thispc";
+              next.targetPath = newFolderPath;
+              next.isOpenable = true;
+              if (!next.type) next.type = "File folder";
+            } else if (typeof next.targetPath === "string") {
+              next.targetPath = newFolderPath;
+            }
+          }
+
+          if (isDestDesktop) {
+            const hasPos = Number.isFinite(next.x) && Number.isFinite(next.y);
+            if (!hasPos) {
+              const pos = findFreePosition(workingDesktop || []);
+              next.x = pos.x;
+              next.y = pos.y;
+              workingDesktop = [...(workingDesktop || []), { ...next }];
+            }
+          }
+
+          return next;
+        },
+      });
+    });
+  }
 
   function createFolder(path, name = "New folder", options = null) {
     setFileTree((prev) => {
@@ -247,7 +345,7 @@ export function FileSystemProvider({ children }) {
   }
 
   return (
-    <FileSystemContext.Provider value={{ fileTree, setFileTree, createFolder, handleContextMenu, getDesktopIcons, setDesktopIcons, findFreePosition, updateDesktopIconPosition }}>
+    <FileSystemContext.Provider value={{ fileTree, setFileTree, createFolder, moveItems, handleContextMenu, getDesktopIcons, setDesktopIcons, findFreePosition, updateDesktopIconPosition }}>
       {children}
     </FileSystemContext.Provider>
   );

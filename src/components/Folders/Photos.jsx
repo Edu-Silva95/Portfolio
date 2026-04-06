@@ -134,6 +134,8 @@ export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery
     >
       <FileTable
         items={filteredContent}
+        currentPath={globalCurrent}
+        pathMap={fileTree}
         selectedIds={selectedIds}
         onSelectionChange={setSelectedIds}
         onItemClick={(item) => setSelectedIds([getItemKey(item)])}
@@ -141,6 +143,7 @@ export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery
         viewMode={viewMode}
         enableMarqueeSelect
         onItemContextMenu={openContextMenuForItem}
+        enableDragDrop
       />
     </div>
   );

@@ -3,6 +3,25 @@ import { buildProjectReadme } from "./projectsReadme";
 import { openExternalUrl } from "./externalUrl";
 import { parseYouTubeVideoId } from "./youtube";
 
+const buildNavigationHistory = (path) =>
+  String(path || "")
+    .split(" > ")
+    .filter(Boolean)
+    .map((_, idx, arr) => arr.slice(0, idx + 1).join(" > "));
+
+// Open items that act like shortcuts regardless of which folder they were moved into.
+export function tryOpenTargetWindowItem({ item, onOpenWindow, updateWindowPath }) {
+  if (!item || item?.isFolder) return false;
+  const winId = item.targetWindowId || item.targetId;
+  if (!winId) return false;
+  if (typeof onOpenWindow !== "function") return false;
+  onOpenWindow(winId);
+  if (item.targetPath && typeof updateWindowPath === "function") {
+    updateWindowPath(winId, item.targetPath, buildNavigationHistory(item.targetPath));
+  }
+  return true;
+}
+
   // Determines if a file name likely represents an image based on its extension.
 export const isImageName = (name) => /\.(png|jpe?g|webp|gif)$/i.test(String(name || "").trim());
   // Checks if an item is an image file based on its properties or name.

@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useRef } from "react";
-
+// This hook provides long-press context menu functionality for touch devices. It listens for pointer events and triggers the provided onLongPress callback when a long press is detected, while also handling movement thresholds to prevent accidental triggers during scrolling or dragging.
 const isCoarsePointer = () => {
   if (typeof window === "undefined") return false;
   const coarse = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
   const touchPoints = typeof navigator !== "undefined" && (navigator.maxTouchPoints || 0) > 0;
   return coarse || touchPoints;
 };
-
 export default function useLongPressContextMenu({
   enabled = true,
   ignoreClosestSelector = null,

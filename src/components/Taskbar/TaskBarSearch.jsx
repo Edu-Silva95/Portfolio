@@ -4,7 +4,7 @@ import useNewsFeed from "../../hooks/useNewsFeed";
 import { useFileSystem } from "../../context/FileSystemContext";
 import { openExternalUrl } from "../../utils/externalUrl";
 import { tryOpenImagePlayer, tryOpenProjectVirtualItem } from "../../utils/folderOpenUtils";
-import { getProjectByFolderPath } from "../../data/projectsData";
+import { resolveProjectForPath } from "../../utils/projectResolve";
 
 export default function TaskBarSearch({
   onOpenWindow = () => { },
@@ -240,7 +240,7 @@ export default function TaskBarSearch({
     }
 
     // Project virtual items (README/demo links/etc.)
-    const project = getProjectByFolderPath(result?.parentPath);
+    const project = resolveProjectForPath({ fileTree, globalPath: result?.parentPath });
     if (tryOpenProjectVirtualItem({ item, project, onOpenWindow, updateWindowPath })) {
       closeSearchPanel();
       return;

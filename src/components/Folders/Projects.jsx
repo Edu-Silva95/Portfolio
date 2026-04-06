@@ -7,8 +7,8 @@ import FileTable from "./FileTable";
 import useFolderNavigation from "../../hooks/useFolderNavigation";
 import { buildPathSegments } from "../../utils/folderPath";
 import { openExternalUrl } from "../../utils/externalUrl";
-import { getProjectByFolderPath } from "../../data/projectsData";
-import { tryOpenImagePlayer, tryOpenProjectVirtualItem } from "../../utils/folderOpenUtils";
+import { resolveProjectForPath } from "../../utils/projectResolve";
+import { tryOpenImagePlayer, tryOpenProjectVirtualItem, tryOpenTargetWindowItem } from "../../utils/folderOpenUtils";
 import { resolveThisPcPath, updateFileTreeList } from "../../utils/fileTreeUpdate";
 import { buildStandardItemContextMenu } from "../../utils/standardItemContextMenu";
 
@@ -112,6 +112,8 @@ export default function ProjectsFolder({
   function handleItemDoubleClick(item) {
     if (!item) return;
 
+    if (tryOpenTargetWindowItem({ item, onOpenWindow, updateWindowPath })) return;
+
     // URL files open externally.
     if (!item?.isFolder) {
       const itemType = String(item?.type || "").toLowerCase();
@@ -129,7 +131,7 @@ export default function ProjectsFolder({
     if (tryOpenImagePlayer({ item, list: currentItems, onOpenWindow, updateWindowPath })) return;
 
     // If we are inside a project folder, allow opening its virtual files (YouTube/readme/etc).
-    const project = getProjectByFolderPath(globalPath);
+    const project = resolveProjectForPath({ fileTree, globalPath });
     if (tryOpenProjectVirtualItem({ item, project, onOpenWindow, updateWindowPath })) return;
 
     // Default: folder navigation.
@@ -153,6 +155,7 @@ export default function ProjectsFolder({
       defaultHeight={defaultHeight}
       dataWindowId={dataWindowId}
       closing={closing}
+      dropPath={globalPath}
     >
       <div
         className="flex flex-col h-full"
@@ -206,6 +209,7 @@ export default function ProjectsFolder({
                 })
               );
             }}
+            enableDragDrop
           />
         </div>
       </div>

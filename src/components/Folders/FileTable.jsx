@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { calculateFolderSize, formatBytes } from "../../utils/folderSizes";
 import useMarqueeSelect from "../../hooks/useMarqueeSelect";
+import { useFileSystem } from "../../context/FileSystemContext";
 
 const FileTable = ({
   items = [],
@@ -14,11 +15,109 @@ const FileTable = ({
   selectedIds = [],
   onSelectionChange = null,
   enableMarqueeSelect = false,
+  enableDragDrop = false,
+  enableDrag = null,
+  enableDrop = null,
 }) => {
   const containerRef = useRef(null);
   const lastTapRef = useRef({ id: null, at: 0 }); //last click for touch devices to emulate double-click
   const longPressRef = useRef({ timer: null, startX: 0, startY: 0, moved: false });
   const suppressNextClickRef = useRef(false);
+
+  const { moveItems } = useFileSystem() || {};
+
+  const dragEnabled = enableDrag ?? enableDragDrop;
+  const dropEnabled = enableDrop ?? enableDragDrop;
+  const canDnD = !!currentPath && typeof moveItems === "function";
+
+  const DND_MIME = "application/x-desktop-portfolio-fs-item";
+
+  const getItemKey = (item) => item?.id ?? item?.name;
+
+  const buildDragPayload = (itemKey) => {
+    const isPartOfSelection = selectedIds.includes(itemKey) && selectedIds.length > 1;
+    const keys = isPartOfSelection ? selectedIds : [itemKey];
+    return {
+      fromPath: currentPath,
+      itemKeys: keys,
+    };
+  };
+
+  const handleDragStart = (item, e) => {
+    if (!canDnD || !dragEnabled) return;
+    const itemKey = getItemKey(item);
+    if (!itemKey) return;
+    e.stopPropagation();
+    try {
+      const payload = buildDragPayload(itemKey);
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData(DND_MIME, JSON.stringify(payload));
+      e.dataTransfer.setData("text/plain", String(item?.name || ""));
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleDragOverFolder = (folderItem, e) => {
+    if (!canDnD || !dropEnabled) return;
+    if (!folderItem?.isFolder) return;
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      e.dataTransfer.dropEffect = "move";
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleDropOnFolder = (folderItem, e) => {
+    if (!canDnD || !dropEnabled) return;
+    if (!folderItem?.isFolder) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      const raw = e.dataTransfer.getData(DND_MIME);
+      if (!raw) return;
+      const payload = JSON.parse(raw);
+      const fromPath = payload?.fromPath;
+      const itemKeys = payload?.itemKeys;
+      if (!fromPath || !Array.isArray(itemKeys) || itemKeys.length === 0) return;
+
+      const toPath = `${currentPath} > ${folderItem.name}`;
+      moveItems({ fromPath, toPath, itemKeys });
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleDragOverContainer = (e) => {
+    if (!canDnD || !dropEnabled) return;
+    e.preventDefault();
+    try {
+      e.dataTransfer.dropEffect = "move";
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleDropOnContainer = (e) => {
+    if (!canDnD || !dropEnabled) return;
+    e.preventDefault();
+
+    try {
+      const raw = e.dataTransfer.getData(DND_MIME);
+      if (!raw) return;
+      const payload = JSON.parse(raw);
+      const fromPath = payload?.fromPath;
+      const itemKeys = payload?.itemKeys;
+      if (!fromPath || !Array.isArray(itemKeys) || itemKeys.length === 0) return;
+
+      moveItems({ fromPath, toPath: currentPath, itemKeys });
+    } catch {
+      // ignore
+    }
+  };
 
   const isCoarsePointer = useMemo(() => {
     if (typeof window === "undefined") return false;
@@ -138,6 +237,9 @@ const FileTable = ({
       <div
         ref={containerRef}
         className="relative h-full min-h-full select-none"
+        data-drop-path={currentPath || undefined}
+        onDragOver={handleDragOverContainer}
+        onDrop={handleDropOnContainer}
         onPointerDown={marqueeSelect.onPointerDown}
         onPointerMove={marqueeSelect.onPointerMove}
         onPointerUp={marqueeSelect.onPointerUp}
@@ -162,6 +264,7 @@ const FileTable = ({
               <button
                 key={itemKey}
                 data-file-id={itemKey}
+                data-drop-path={item?.isFolder && currentPath ? `${currentPath} > ${item.name}` : undefined}
                 type="button"
                 onClick={(e) => handleActivate(item, itemKey, e)}
                 onDoubleClick={() => onItemDoubleClick && onItemDoubleClick(item)}
@@ -170,6 +273,10 @@ const FileTable = ({
                 onPointerMove={moveLongPress}
                 onPointerUp={clearLongPress}
                 onPointerCancel={clearLongPress}
+                draggable={!!(canDnD && dragEnabled)}
+                onDragStart={(e) => handleDragStart(item, e)}
+                onDragOver={(e) => handleDragOverFolder(item, e)}
+                onDrop={(e) => handleDropOnFolder(item, e)}
                 className={`${interactive ? "cursor-pointer hover:bg-white/10" : "cursor-default"} ${isSelected ? "bg-[#66a6ff]/20 ring-1 ring-[#66a6ff]/70" : ""} w-24 h-auto flex flex-col items-center gap-1 p-1 rounded transition text-center overflow-hidden select-none`}
               >
                 {item.isImage || (typeof item.icon === "string" && item.icon.includes("/")) ? (
@@ -198,6 +305,9 @@ const FileTable = ({
     <div
       ref={containerRef}
       className="relative h-full min-h-full select-none"
+      data-drop-path={currentPath || undefined}
+      onDragOver={handleDragOverContainer}
+      onDrop={handleDropOnContainer}
       onPointerDown={marqueeSelect.onPointerDown}
       onPointerMove={marqueeSelect.onPointerMove}
       onPointerUp={marqueeSelect.onPointerUp}
@@ -236,6 +346,7 @@ const FileTable = ({
             <tr
               key={item.id ?? item.name}
               data-file-id={item.id ?? item.name}
+              data-drop-path={item?.isFolder && currentPath ? `${currentPath} > ${item.name}` : undefined}
               onClick={(e) => handleActivate(item, item.id ?? item.name, e)}
               onDoubleClick={() => onItemDoubleClick && onItemDoubleClick(item)}
               onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onItemContextMenu && onItemContextMenu(item, e); }}
@@ -243,6 +354,10 @@ const FileTable = ({
               onPointerMove={moveLongPress}
               onPointerUp={clearLongPress}
               onPointerCancel={clearLongPress}
+              draggable={!!(canDnD && dragEnabled)}
+              onDragStart={(e) => handleDragStart(item, e)}
+              onDragOver={(e) => handleDragOverFolder(item, e)}
+              onDrop={(e) => handleDropOnFolder(item, e)}
               className={`${interactive ? "cursor-pointer hover:bg-white/5" : "cursor-default"} ${selectedIds.includes(item.id ?? item.name) ? "bg-[#66a6ff]/15" : ""} border-b border-white/5 transition select-none`}
             >
               <td className="px-2 py-2">

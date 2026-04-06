@@ -8,9 +8,9 @@ import useFolderNavigation from "../../hooks/useFolderNavigation";
 import { formatPath, getWindowTitle, buildPathSegments } from "../../utils/folderPath";
 import { PhotosContent } from "./Photos";
 import { GamesContent } from "./Games";
-import { getProjectByFolderPath } from "../../data/projectsData";
+import { resolveProjectForPath } from "../../utils/projectResolve";
 import { openExternalUrl } from "../../utils/externalUrl";
-import { tryOpenImagePlayer, tryOpenProjectVirtualItem } from "../../utils/folderOpenUtils";
+import { tryOpenImagePlayer, tryOpenProjectVirtualItem, tryOpenTargetWindowItem } from "../../utils/folderOpenUtils";
 import useLongPressContextMenu from "../../hooks/useLongPressContextMenu";
 
 export default function ThisPC({ onClose, onMinimize, minimized = false, minimizing = false, onOpenWindow = () => { }, initialPath = "This PC", centered = false, defaultWidth = 700, defaultHeight = 420, windowId = "", updateWindowPath = null, savedPath = null, savedHistory = null, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, openableIds = [], closing = false }) {
@@ -76,6 +76,9 @@ export default function ThisPC({ onClose, onMinimize, minimized = false, minimiz
 
   // Open windows or drill into folders from the list.
   const handleItemDoubleClick = (item) => {
+    // Allow opening moved shortcuts (ex: Browser/DOOM/Readme) from inside any folder.
+    if (tryOpenTargetWindowItem({ item, onOpenWindow, updateWindowPath })) return;
+
     if (!item?.isFolder) {
       const itemType = String(item?.type || "").toLowerCase();
       if (itemType === "url" || item?.url) {
@@ -101,7 +104,7 @@ export default function ThisPC({ onClose, onMinimize, minimized = false, minimiz
     })) return;
 
     // If inside a project folder, allow opening its virtual files.
-    const project = getProjectByFolderPath(currentPath);
+    const project = resolveProjectForPath({ fileTree, globalPath: currentPath });
     if (tryOpenProjectVirtualItem({ item, project, onOpenWindow, updateWindowPath })) return;
 
     // Open CV PDF file
@@ -251,7 +254,7 @@ export default function ThisPC({ onClose, onMinimize, minimized = false, minimiz
   });
 
   return (
-    <Window title={windowTitle} onClose={onClose} onMinimize={onMinimize} minimized={minimized} minimizing={minimizing} centered={centered} defaultWidth={defaultWidth} defaultHeight={defaultHeight} closing={closing}>
+    <Window title={windowTitle} onClose={onClose} onMinimize={onMinimize} minimized={minimized} minimizing={minimizing} centered={centered} defaultWidth={defaultWidth} defaultHeight={defaultHeight} closing={closing} dropPath={currentPath !== "This PC" ? currentPath : null}>
       <div className="flex flex-col h-full">
         <FolderToolbar
           onBack={handleBack}
@@ -286,6 +289,9 @@ export default function ThisPC({ onClose, onMinimize, minimized = false, minimiz
                   currentPath={"This PC"}
                   pathMap={fileTree}
                   {...createTableProps((item, e) => openContextMenuForItem("This PC", "folders", item, e))}
+                  enableDragDrop
+                  enableDrag={false}
+                  enableDrop
                 />
               </div>
               <div>
@@ -295,6 +301,7 @@ export default function ThisPC({ onClose, onMinimize, minimized = false, minimiz
                   currentPath={"This PC"}
                   pathMap={fileTree}
                   {...createTableProps((item, e) => openContextMenuForItem("This PC", "drives", item, e))}
+                  enableDragDrop={false}
                 />
               </div>
             </>
@@ -319,6 +326,7 @@ export default function ThisPC({ onClose, onMinimize, minimized = false, minimiz
               currentPath={currentPath}
               pathMap={fileTree}
               {...createTableProps((item, e) => openContextMenuForItem(currentPath, "content", item, e))}
+              enableDragDrop
             />
           )}
         </div>
