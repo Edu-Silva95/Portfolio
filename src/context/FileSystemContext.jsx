@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { pathMap as initialPathMap } from "../config/fileSystemData";
 import { initialIcons } from "../config/desktopConfig";
-import { moveFileTreeItems, resolveThisPcPath } from "../utils/fileTreeUpdate";
+import { isFolderLikeItem, moveFileTreeItems, resolveThisPcPath } from "../utils/fileTreeUpdate";
 
 const FileSystemContext = createContext(null);
 
@@ -74,7 +74,7 @@ export function FileSystemProvider({ children }) {
 
     // Ensure Games folder under Documents contains DOOM
     const docsGamesKey = "This PC > Documents > Games";
-    const doomItem = { name: "DOOM", icon: "/icons/doom.png", type: "Application", size: "2.39 MB", isFolder: false, isOpenable: true };
+    const doomItem = { name: "DOOM", icon: "/icons/doom.png", type: "Application", size: "2.39 MB", isFolder: false, isOpenable: true, targetWindowId: "doom" };
     if (!tree[docsGamesKey]) tree[docsGamesKey] = { content: [doomItem] };
     else if (!Array.isArray(tree[docsGamesKey].content) || !tree[docsGamesKey].content.some((it) => it.name === "DOOM")) {
       tree[docsGamesKey].content = [...(tree[docsGamesKey].content || []), doomItem];
@@ -82,6 +82,98 @@ export function FileSystemProvider({ children }) {
 
     return tree;
   });
+
+  // One-time repair pass: normalize open-metadata across the whole tree so
+  // items keep opening after moving between folders/Desktop.
+  const didNormalizeFileTreeRef = useRef(false);
+  useEffect(() => {
+    if (didNormalizeFileTreeRef.current) return;
+    didNormalizeFileTreeRef.current = true;
+
+    const getEntryItems = (entry) => {
+      const content = Array.isArray(entry?.content) ? entry.content : [];
+      const folders = Array.isArray(entry?.folders) ? entry.folders : [];
+      const drives = Array.isArray(entry?.drives) ? entry.drives : [];
+      return [...content, ...folders, ...drives];
+    };
+
+    const inferProjectIdForPath = (tree, path) => {
+      const parts = String(path || "")
+        .split(" > ")
+        .map((p) => p.trim())
+        .filter(Boolean);
+      if (parts.length < 2) return null;
+
+      const folderName = parts[parts.length - 1];
+      const parentPath = parts.slice(0, -1).join(" > ");
+      const parentEntry = tree?.[parentPath];
+      const parentItems = getEntryItems(parentEntry);
+      const match = parentItems.find((it) => it?.isFolder && it?.name === folderName && it?.projectId);
+      return match?.projectId || null;
+    };
+
+    setFileTree((prev) => {
+      if (!prev || typeof prev !== "object") return prev;
+
+      let changed = false;
+      const nextTree = { ...prev };
+
+      for (const [path, entry] of Object.entries(prev)) {
+        const list = Array.isArray(entry?.content) ? entry.content : null;
+        if (!list || list.length === 0) continue;
+
+        const projectIdForFolder = inferProjectIdForPath(prev, path);
+        let nextList = null;
+
+        for (let i = 0; i < list.length; i += 1) {
+          const item = list[i];
+          if (!item || typeof item !== "object") continue;
+
+          let updated = item;
+          const name = String(item?.originalName || item?.name || "");
+          const lower = name.toLowerCase();
+
+          // Project virtual files should carry projectId/kind so they open anywhere.
+          if (projectIdForFolder && !item.isFolder) {
+            const isReadme = lower === "readme.txt";
+            const isDemo = /_live_demo\.mp4$/i.test(name.trim()) || lower === "live_demo_link.txt";
+
+            if (isReadme && item.projectId !== projectIdForFolder) {
+              updated = { ...updated, projectId: projectIdForFolder, projectVirtualKind: updated.projectVirtualKind || "readme" };
+            }
+            if (isDemo && item.projectId !== projectIdForFolder) {
+              updated = { ...updated, projectId: projectIdForFolder, projectVirtualKind: updated.projectVirtualKind || "demo" };
+            }
+          }
+
+          // Known openables by name should carry targetWindowId so they open anywhere.
+          if (!updated.isFolder) {
+            if (lower === "curriculum_vitae_2026.pdf" && updated.targetWindowId !== "cv") {
+              updated = { ...updated, isOpenable: true, targetWindowId: "cv" };
+            }
+            if (lower === "doom" && !updated.targetWindowId) {
+              updated = { ...updated, isOpenable: true, targetWindowId: "doom" };
+            }
+            if (lower === "dino game" && !updated.targetWindowId) {
+              updated = { ...updated, isOpenable: true, targetWindowId: "dino" };
+            }
+          }
+
+          if (updated !== item) {
+            if (!nextList) nextList = [...list];
+            nextList[i] = updated;
+          }
+        }
+
+        if (nextList) {
+          nextTree[path] = { ...(entry || {}), content: nextList };
+          changed = true;
+        }
+      }
+
+      return changed ? nextTree : prev;
+    });
+  }, [setFileTree]);
 
   // One-time repair pass: ensure desktop items always have stable ids/labels.
   // This fixes items moved before drag/drop normalization existed.
@@ -206,7 +298,7 @@ export function FileSystemProvider({ children }) {
           }
 
           // Be robust: some folder entries rely on `type` instead of `isFolder`.
-          const looksLikeFolder = !!(next.isFolder || String(next.type || "").toLowerCase() === "folder" || String(next.type || "").toLowerCase() === "file folder");
+          const looksLikeFolder = isFolderLikeItem(next);
           if (looksLikeFolder) next.isFolder = true;
 
           if (looksLikeFolder) {

@@ -248,13 +248,18 @@ export default function Documents({
             currentPath={currentPath}
             basePath="Documents > Photos"
             onFolderOpen={(newPath) => pushPath(newPath)}
+            onOpenWindow={onOpenWindow}
+            updateWindowPath={updateWindowPath}
             {...sharedMediaProps}
           />
         ) : currentPath.startsWith("Documents > Games") ? (
           <GamesContent
             basePath="Documents > Games"
+            currentPath={currentPath}
+            onFolderOpen={(newPath) => pushPath(newPath)}
             {...sharedMediaProps}
             onOpenWindow={onOpenWindow}
+            updateWindowPath={updateWindowPath}
           />
         ) : (
           <div

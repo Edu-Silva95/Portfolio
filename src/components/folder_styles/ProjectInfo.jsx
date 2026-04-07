@@ -8,6 +8,9 @@ import { useFileSystem } from "../../context/FileSystemContext";
 import useLongPressContextMenu from "../../hooks/useLongPressContextMenu";
 import { updateFileTreeList } from "../../utils/fileTreeUpdate";
 import { buildStandardItemContextMenu } from "../../utils/standardItemContextMenu";
+import { openExternalUrl } from "../../utils/externalUrl";
+import { resolveProjectForPath } from "../../utils/projectResolve";
+import { tryOpenImagePlayer, tryOpenProjectVirtualItem, tryOpenTargetWindowItem } from "../../utils/folderOpenUtils";
 
 export default function ProjectInfo({
   onClose,
@@ -15,6 +18,8 @@ export default function ProjectInfo({
   minimized = false,
   minimizing = false,
   onOpenReadme,
+  onOpenWindow = null,
+  updateWindowPath = null,
   onNavigateSystemPath = null,
   onContextMenuRequested = null,
   onMoveToRecycleBin = null,
@@ -142,6 +147,12 @@ export default function ProjectInfo({
 
   const handleItemDoubleClick = (item) => {
     if (!item) return;
+
+    const displayName = String(item?.originalName || item?.name || "");
+
+    // Open moved shortcuts (Browser/DOOM/etc.) from inside Project Info.
+    if (tryOpenTargetWindowItem({ item, onOpenWindow, updateWindowPath })) return;
+
     if (currentPath === thisPcPath && item.name === "Desktop") {
       if (typeof onNavigateSystemPath === "function") {
         onNavigateSystemPath(desktopPath);
@@ -155,7 +166,30 @@ export default function ProjectInfo({
       setSelectedIds([]);
       return;
     }
-    if (item.name === "Readme.txt") {
+
+    if (!item?.isFolder) {
+      const itemType = String(item?.type || "").toLowerCase();
+      if (itemType === "url" || item?.url) {
+        const url = item?.url;
+        if (url) {
+          openExternalUrl(url, { preferNewTab: true });
+          return;
+        }
+      }
+    }
+
+    if (tryOpenImagePlayer({ item, list: currentItems, onOpenWindow, updateWindowPath })) return;
+
+    const project = resolveProjectForPath({ fileTree, globalPath: currentPath });
+    if (tryOpenProjectVirtualItem({ item, project, onOpenWindow, updateWindowPath })) return;
+
+    if (item.isFolder) {
+      pushPath(`${currentPath} > ${item.name}`);
+      setSelectedIds([]);
+      return;
+    }
+
+    if (displayName === "Readme.txt") {
       handleOpen();
     }
   };
@@ -187,23 +221,23 @@ export default function ProjectInfo({
             handleContextMenu?.(e, currentPath, onContextMenuRequested);
           }}
         >
-          {filteredItems.length > 0 ? (
-            <FileTable
-              items={filteredItems}
-              currentPath={currentPath}
-              pathMap={fileTree}
-              viewMode={viewMode}
-              selectedIds={selectedIds}
-              onSelectionChange={setSelectedIds}
-              onItemClick={(item) => setSelectedIds([item.id ?? item.name])}
-              onItemDoubleClick={handleItemDoubleClick}
-              onItemContextMenu={openContextMenuForItem}
-              enableMarqueeSelect
-              enableDragDrop
-            />
-          ) : (
-            <p className="text-white/60 text-sm px-2">No items match your search.</p>
-          )}
+          <FileTable
+            items={filteredItems}
+            currentPath={currentPath}
+            pathMap={fileTree}
+            viewMode={viewMode}
+            selectedIds={selectedIds}
+            onSelectionChange={setSelectedIds}
+            onItemClick={(item) => setSelectedIds([item.id ?? item.name])}
+            onItemDoubleClick={handleItemDoubleClick}
+            onItemContextMenu={openContextMenuForItem}
+            enableMarqueeSelect
+            enableDragDrop
+          />
+
+          {filteredItems.length === 0 ? (
+            <p className="text-white/60 text-sm px-2 pt-2">No items match your search.</p>
+          ) : null}
         </div>
         <div className="pt-2 border-t border-white/10 text-xs text-white/70 flex items-center justify-between">
           <span>

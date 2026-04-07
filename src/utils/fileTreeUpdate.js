@@ -6,6 +6,14 @@ export const resolveThisPcPath = (path) => {
 };
 // Helper to get a unique key for a file tree item, using `id` if available or falling back to `name`.
 export const getTreeItemKey = (item) => item?.id ?? item?.name;
+
+// Some items rely on `type` instead of `isFolder`.
+export const isFolderLikeItem = (item) => {
+  if (!item) return false;
+  if (item?.isFolder) return true;
+  const t = String(item?.type || "").toLowerCase();
+  return t === "folder" || t === "file folder";
+};
 // Generates a unique name for a moved item based on the target folder's existing item names to avoid conflicts.
 const makeUniqueName = (baseName, existingNames) => {
   const base = String(baseName || "").trim() || "New item";
@@ -72,8 +80,10 @@ export const moveFileTreeItems = (
     const item = fromEntry[fromListKey][idx];
     if (!item) continue;
 
+    const itemIsFolder = isFolderLikeItem(item);
+
     // Disallow dropping a folder into itself / its descendants.
-    if (item?.isFolder) {
+    if (itemIsFolder) {
       const oldFolderPath = `${resolvedFrom} > ${item.name}`;
       if (resolvedTo === oldFolderPath || resolvedTo.startsWith(`${oldFolderPath} >`)) {
         continue;
@@ -89,6 +99,9 @@ export const moveFileTreeItems = (
     // Add to destination.
     let movedItem = {
       ...item,
+      ...(itemIsFolder ? { isFolder: true } : null),
+      // Preserve the original name for open logic that shouldn't break on conflict-renames.
+      ...(finalName !== item.name && !item.originalName ? { originalName: item.name } : null),
       name: finalName,
       label: finalName,
     };
@@ -106,7 +119,7 @@ export const moveFileTreeItems = (
     changed = true;
 
     // If it's a folder, move its subtree keys.
-    if (item?.isFolder) {
+    if (itemIsFolder) {
       const oldRoot = `${resolvedFrom} > ${item.name}`;
       const newRoot = `${resolvedTo} > ${finalName}`;
 

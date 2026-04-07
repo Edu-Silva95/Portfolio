@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { calculateFolderSize, formatBytes } from "../../utils/folderSizes";
 import useMarqueeSelect from "../../hooks/useMarqueeSelect";
 import { useFileSystem } from "../../context/FileSystemContext";
+import { readFsItemDndDataTransfer, setFsItemDndDataTransfer } from "../../utils/dragDropPayload";
 
 const FileTable = ({
   items = [],
@@ -30,8 +31,6 @@ const FileTable = ({
   const dropEnabled = enableDrop ?? enableDragDrop;
   const canDnD = !!currentPath && typeof moveItems === "function";
 
-  const DND_MIME = "application/x-desktop-portfolio-fs-item";
-
   const getItemKey = (item) => item?.id ?? item?.name;
 
   const buildDragPayload = (itemKey) => {
@@ -50,9 +49,7 @@ const FileTable = ({
     e.stopPropagation();
     try {
       const payload = buildDragPayload(itemKey);
-      e.dataTransfer.effectAllowed = "move";
-      e.dataTransfer.setData(DND_MIME, JSON.stringify(payload));
-      e.dataTransfer.setData("text/plain", String(item?.name || ""));
+      setFsItemDndDataTransfer(e.dataTransfer, payload, { text: String(item?.name || "") });
     } catch {
       // ignore
     }
@@ -77,9 +74,7 @@ const FileTable = ({
     e.stopPropagation();
 
     try {
-      const raw = e.dataTransfer.getData(DND_MIME);
-      if (!raw) return;
-      const payload = JSON.parse(raw);
+      const payload = readFsItemDndDataTransfer(e.dataTransfer);
       const fromPath = payload?.fromPath;
       const itemKeys = payload?.itemKeys;
       if (!fromPath || !Array.isArray(itemKeys) || itemKeys.length === 0) return;
@@ -106,9 +101,7 @@ const FileTable = ({
     e.preventDefault();
 
     try {
-      const raw = e.dataTransfer.getData(DND_MIME);
-      if (!raw) return;
-      const payload = JSON.parse(raw);
+      const payload = readFsItemDndDataTransfer(e.dataTransfer);
       const fromPath = payload?.fromPath;
       const itemKeys = payload?.itemKeys;
       if (!fromPath || !Array.isArray(itemKeys) || itemKeys.length === 0) return;
@@ -259,7 +252,15 @@ const FileTable = ({
           {items.map((item) => {
             const itemKey = item.id ?? item.name;
             const isSelected = selectedIds.includes(itemKey);
-            const interactive = item.path || item.isFolder || item.isOpenable || !!item.id || item.name === "Curriculum_Vitae_2026.pdf";
+            const interactive =
+              item.path ||
+              item.isFolder ||
+              item.isOpenable ||
+              !!item.id ||
+              !!item.targetWindowId ||
+              !!item.targetId ||
+              !!item.url ||
+              item.name === "Curriculum_Vitae_2026.pdf";
             return (
               <button
                 key={itemKey}
@@ -341,7 +342,15 @@ const FileTable = ({
         <tbody>
           {items.map((item) => (
             (() => {
-              const interactive = item.path || item.isFolder || item.isOpenable || !!item.id || item.name === "Curriculum_Vitae_2026.pdf";
+              const interactive =
+                item.path ||
+                item.isFolder ||
+                item.isOpenable ||
+                !!item.id ||
+                !!item.targetWindowId ||
+                !!item.targetId ||
+                !!item.url ||
+                item.name === "Curriculum_Vitae_2026.pdf";
               return (
             <tr
               key={item.id ?? item.name}

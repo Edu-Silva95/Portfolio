@@ -4,8 +4,9 @@ import { useFileSystem } from "../../context/FileSystemContext";
 import useLongPressContextMenu from "../../hooks/useLongPressContextMenu";
 import { resolveThisPcPath, updateFileTreeList } from "../../utils/fileTreeUpdate";
 import { buildStandardItemContextMenu } from "../../utils/standardItemContextMenu";
+import { tryOpenImagePlayer, tryOpenTargetWindowItem } from "../../utils/folderOpenUtils";
 
-export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery = "", viewMode = "list", onCountChange, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null }) {
+export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery = "", viewMode = "list", onCountChange, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, onOpenWindow = null, updateWindowPath = null }) {
   const { fileTree, setFileTree, handleContextMenu } = useFileSystem();
   const [selectedIds, setSelectedIds] = useState([]);
 
@@ -52,7 +53,14 @@ export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery
     if (item.isFolder) {
       const newPath = `${currentPath} > ${item.name}`;
       onFolderOpen?.(newPath);
+      return;
     }
+
+    // Allow opening moved shortcuts/files inside Photos (consistent with other folders).
+    if (tryOpenTargetWindowItem({ item, onOpenWindow, updateWindowPath })) return;
+
+    // Open images in the in-app ImagePlayer.
+    if (tryOpenImagePlayer({ item, list: currentContent, onOpenWindow, updateWindowPath })) return;
   };
 
   const getItemKey = (item) => item.id ?? item.name;

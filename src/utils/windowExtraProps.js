@@ -46,6 +46,8 @@ export function buildWindowExtraProps({
 
   if (id === "about") {
     extraProps.onOpenReadme = () => openWindow("readme");
+    extraProps.onOpenWindow = openWindow;
+    extraProps.updateWindowPath = updateWindowPath;
     extraProps.onNavigateSystemPath = (targetPath) => {
       const path = targetPath || "This PC";
       const history = path === "This PC > Desktop" ? ["This PC", "This PC > Desktop"] : ["This PC"];

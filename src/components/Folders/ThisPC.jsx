@@ -310,13 +310,18 @@ export default function ThisPC({ onClose, onMinimize, minimized = false, minimiz
               currentPath={currentPath}
               basePath="This PC > Documents > Photos"
               onFolderOpen={(newPath) => pushPath(newPath)}
+              onOpenWindow={onOpenWindow}
+              updateWindowPath={updateWindowPath}
               {...sharedMediaProps}
             />
           ) : currentPath.startsWith("This PC > Documents > Games") ? (
             <GamesContent
               basePath="This PC > Documents > Games"
+              currentPath={currentPath}
+              onFolderOpen={(newPath) => pushPath(newPath)}
               {...sharedMediaProps}
               onOpenWindow={onOpenWindow}
+              updateWindowPath={updateWindowPath}
               selectedIds={selectedIds}
               onSelectionChange={setSelectedIds}
             />

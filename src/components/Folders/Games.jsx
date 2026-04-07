@@ -2,8 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import FileTable from "./FileTable";
 import { useFileSystem } from "../../context/FileSystemContext";
 import useLongPressContextMenu from "../../hooks/useLongPressContextMenu";
+import { openExternalUrl } from "../../utils/externalUrl";
+import { resolveProjectForPath } from "../../utils/projectResolve";
+import { tryOpenImagePlayer, tryOpenProjectVirtualItem, tryOpenTargetWindowItem } from "../../utils/folderOpenUtils";
 
-export function GamesContent({ basePath = "This PC > Games", searchQuery = "", viewMode = "list", onCountChange, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, onOpenWindow = null, selectedIds: selectedIdsProp = null, onSelectionChange = null }) {
+export function GamesContent({ basePath = "This PC > Games", currentPath = null, onFolderOpen = null, searchQuery = "", viewMode = "list", onCountChange, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, onOpenWindow = null, updateWindowPath = null, selectedIds: selectedIdsProp = null, onSelectionChange = null }) {
   const { fileTree, setFileTree, handleContextMenu } = useFileSystem();
   const [localSelectedIds, setLocalSelectedIds] = useState([]);
   // Allow parent to control selection when provided.
@@ -24,8 +27,9 @@ export function GamesContent({ basePath = "This PC > Games", searchQuery = "", v
   };
 
   const resolveGlobal = (p) => (p?.startsWith("This PC") ? p : `This PC > ${p}`);
-  const globalBase = resolveGlobal(basePath);
-  const localGames = fileTree[globalBase]?.content || [];
+  const actionPath = currentPath || basePath;
+  const globalPath = resolveGlobal(actionPath);
+  const currentItems = fileTree[globalPath]?.content || [];
 
   const backgroundLongPress = useLongPressContextMenu({
     enabled: !!onContextMenuRequested,
@@ -45,10 +49,10 @@ export function GamesContent({ basePath = "This PC > Games", searchQuery = "", v
   });
 
   const filteredContent = useMemo(() => {
-    if (!searchQuery.trim()) return localGames;
+    if (!searchQuery.trim()) return currentItems;
     const q = searchQuery.toLowerCase();
-    return localGames.filter((item) => item.name.toLowerCase().includes(q));
-  }, [localGames, searchQuery]);
+    return currentItems.filter((item) => item.name.toLowerCase().includes(q));
+  }, [currentItems, searchQuery]);
 
   // Restore items from recycle bin for this path.
   useEffect(() => {
@@ -60,27 +64,27 @@ export function GamesContent({ basePath = "This PC > Games", searchQuery = "", v
   }, [searchQuery]);
 
   useEffect(() => {
-    const globalBaseKey = globalBase;
-    const restores = pendingRestores?.[basePath] || pendingRestores?.[globalBaseKey];
+    const globalKey = globalPath;
+    const restores = pendingRestores?.[actionPath] || pendingRestores?.[globalKey];
     if (!restores || restores.length === 0) return;
     setFileTree((prev) => {
-      const entry = prev[globalBaseKey] ? { ...prev[globalBaseKey] } : { content: [] };
+      const entry = prev[globalKey] ? { ...prev[globalKey] } : { content: [] };
       const existing = new Set((entry.content || []).map((it) => it.name));
       const toAdd = restores
         .map((r) => r.payload || { name: r.name, icon: r.icon, type: "Game", size: "—" })
         .filter((it) => !existing.has(it.name));
-      return { ...prev, [globalBaseKey]: { ...entry, content: [...toAdd, ...(entry.content || [])] } };
+      return { ...prev, [globalKey]: { ...entry, content: [...toAdd, ...(entry.content || [])] } };
     });
-    onConsumeRestore?.(basePath);
-  }, [pendingRestores, onConsumeRestore, basePath, globalBase, setFileTree]);
+    onConsumeRestore?.(actionPath);
+  }, [pendingRestores, onConsumeRestore, actionPath, globalPath, setFileTree]);
 
   const handleRename = (item) => {
     const name = prompt("Rename", item.name);
     if (!name || name === item.name) return;
     setFileTree((prev) => {
-      const entry = prev[globalBase] ? { ...prev[globalBase] } : { content: [] };
+      const entry = prev[globalPath] ? { ...prev[globalPath] } : { content: [] };
       const next = (entry.content || []).map((it) => (it.name === item.name ? { ...it, name } : it));
-      return { ...prev, [globalBase]: { ...entry, content: next } };
+      return { ...prev, [globalPath]: { ...entry, content: next } };
     });
   };
 
@@ -89,28 +93,53 @@ export function GamesContent({ basePath = "This PC > Games", searchQuery = "", v
   const handleDelete = (item) => {
     const itemKey = getItemKey(item);
     const selectedSet = new Set(selectedIds);
-    const selectedItems = localGames.filter((it) => selectedSet.has(getItemKey(it)));
+    const selectedItems = currentItems.filter((it) => selectedSet.has(getItemKey(it)));
     const shouldDeleteGroup = selectedItems.length > 1 && selectedSet.has(itemKey);
     const itemsToDelete = shouldDeleteGroup ? selectedItems : [item];
 
     if (!confirmDelete(itemsToDelete.length)) return;
 
     const deleteKeys = new Set(itemsToDelete.map((it) => getItemKey(it)));
-    itemsToDelete.forEach((it) => onMoveToRecycleBin?.(it, basePath));
+    itemsToDelete.forEach((it) => onMoveToRecycleBin?.(it, actionPath));
     setFileTree((prev) => {
-      const entry = prev[globalBase] ? { ...prev[globalBase] } : { content: [] };
+      const entry = prev[globalPath] ? { ...prev[globalPath] } : { content: [] };
       const next = (entry.content || []).filter((it) => !deleteKeys.has(getItemKey(it)));
-      return { ...prev, [globalBase]: { ...entry, content: next } };
+      return { ...prev, [globalPath]: { ...entry, content: next } };
     });
     updateSelectedIds([]);
   };
 
   // Open the linked game window based on item name.
   const handleOpen = (item) => {
-    if (item.name === "Dino Game") {
+    if (tryOpenTargetWindowItem({ item, onOpenWindow, updateWindowPath })) return;
+
+    const displayName = String(item?.originalName || item?.name || "");
+
+    if (!item?.isFolder) {
+      const itemType = String(item?.type || "").toLowerCase();
+      if (itemType === "url" || item?.url) {
+        const url = item?.url;
+        if (url) {
+          openExternalUrl(url, { preferNewTab: true });
+          return;
+        }
+      }
+    }
+
+    if (tryOpenImagePlayer({ item, list: currentItems, onOpenWindow, updateWindowPath })) return;
+
+    const project = resolveProjectForPath({ fileTree, globalPath });
+    if (tryOpenProjectVirtualItem({ item, project, onOpenWindow, updateWindowPath })) return;
+
+    if (item?.isFolder) {
+      onFolderOpen?.(`${actionPath} > ${item.name}`);
+      return;
+    }
+
+    if (displayName === "Dino Game") {
       onOpenWindow?.("dino");
       return;
-    } else if (item.name === "DOOM") {
+    } else if (displayName === "DOOM") {
       onOpenWindow?.("doom");
     }
   };
@@ -124,7 +153,7 @@ export function GamesContent({ basePath = "This PC > Games", searchQuery = "", v
       targetId: null,
       items: [
         { key: "open", label: "Open", onClick: () => handleOpen(item) },
-        { key: "shortcut", label: "Create shortcut", onClick: () => onCreateDesktopShortcut?.(item, basePath) },
+        { key: "shortcut", label: "Create shortcut", onClick: () => onCreateDesktopShortcut?.(item, actionPath) },
         { key: "rename", label: "Rename", onClick: () => handleRename(item) },
         { key: "delete", label: "Delete", onClick: () => handleDelete(item) },
       ],
@@ -138,12 +167,12 @@ export function GamesContent({ basePath = "This PC > Games", searchQuery = "", v
       onPointerDownCapture={backgroundLongPress.onPointerDown}
       onContextMenu={(e) => {
         if (!onContextMenuRequested) return;
-        handleContextMenu?.(e, globalBase, onContextMenuRequested);
+        handleContextMenu?.(e, globalPath, onContextMenuRequested);
       }}
     >
       <FileTable
         items={filteredContent}
-        currentPath={globalBase}
+        currentPath={globalPath}
         pathMap={fileTree}
         selectedIds={selectedIds}
         onSelectionChange={updateSelectedIds}

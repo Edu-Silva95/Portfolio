@@ -2,7 +2,9 @@
 import { buildProjectReadme } from "./projectsReadme";
 import { openExternalUrl } from "./externalUrl";
 import { parseYouTubeVideoId } from "./youtube";
+import { getProjectById } from "../data/projectsData";
 
+// Attempts to open an item that may represent a shortcut to another window, based on its properties.
 const buildNavigationHistory = (path) =>
   String(path || "")
     .split(" > ")
@@ -76,9 +78,13 @@ export function tryOpenProjectVirtualItem({
   onOpenWindow,
   updateWindowPath,
 }) {
-  if (!project || item?.isFolder) return false;
+  if (item?.isFolder) return false;
 
-  const name = String(item?.name || "");
+  const resolvedProject = project || getProjectById(item?.projectId);
+  if (!resolvedProject) return false;
+
+  const kind = String(item?.projectVirtualKind || "").trim().toLowerCase();
+  const name = String(item?.originalName || item?.name || "");
   const lower = name.toLowerCase();
   const itemType = String(item?.type || "").toLowerCase();
 
@@ -100,29 +106,29 @@ export function tryOpenProjectVirtualItem({
   if (itemType === "url" || item?.url) {
     const url =
       item?.url ||
-      project.links?.live ||
-      project.links?.link ||
-      project.links?.repo;
+      resolvedProject.links?.live ||
+      resolvedProject.links?.link ||
+      resolvedProject.links?.repo;
     return url ? openExternalTab(url) : openNotes(name || "URL", "No URL configured for this project.");
   }
 
-  if (lower === "readme.txt") {
-    const content = buildProjectReadme(project);
+  if (kind === "readme" || lower === "readme.txt") {
+    const content = buildProjectReadme(resolvedProject);
     return openNotes(name || "README", content || "(README not available.)");
   }
   // Special handling for live demo links or video files, prioritizing YouTube demos if configured.
   const isLiveDemoVideoFile = /_live_demo\.mp4$/i.test(name.trim());
-  if (lower === "live_demo_link.txt" || isLiveDemoVideoFile) {
+  if (kind === "demo" || lower === "live_demo_link.txt" || isLiveDemoVideoFile) {
     const candidate =
-      project.demoYoutubeUrl ||
-      project.demoYoutubeId ||
-      project.links?.demo ||
-      project.links?.youtube;
+      resolvedProject.demoYoutubeUrl ||
+      resolvedProject.demoYoutubeId ||
+      resolvedProject.links?.demo ||
+      resolvedProject.links?.youtube;
     const youtubeId = parseYouTubeVideoId(candidate);
 
     if (youtubeId && canOpenInApp) {
       updateWindowPath("youtube", String(candidate || youtubeId), {
-        title: `${project.name || "Project"} Demo`,
+        title: `${resolvedProject.name || "Project"} Demo`,
         videoId: youtubeId,
       });
       onOpenWindow("youtube");
@@ -130,24 +136,24 @@ export function tryOpenProjectVirtualItem({
     }
 
     // Back-compat: older project entries used links.live for the YouTube URL.
-    const youtubeFromLive = parseYouTubeVideoId(project.links?.live);
+    const youtubeFromLive = parseYouTubeVideoId(resolvedProject.links?.live);
     if (youtubeFromLive && canOpenInApp) {
-      updateWindowPath("youtube", String(project.links?.live || youtubeFromLive), {
-        title: `${project.name || "Project"} Demo`,
+      updateWindowPath("youtube", String(resolvedProject.links?.live || youtubeFromLive), {
+        title: `${resolvedProject.name || "Project"} Demo`,
         videoId: youtubeFromLive,
       });
       onOpenWindow("youtube");
       return true;
     }
 
-    const live = project.links?.live || project.links?.link;
+    const live = resolvedProject.links?.live || resolvedProject.links?.link;
     if (live) return openExternalTab(live);
 
     return openNotes(name || "Demo", "No YouTube demo configured for this project.");
   }
 
   if (isImageName(lower)) {
-    const src = Array.isArray(project.screenshots) && project.screenshots.length ? project.screenshots[0] : "";
+    const src = Array.isArray(resolvedProject.screenshots) && resolvedProject.screenshots.length ? resolvedProject.screenshots[0] : "";
     return src ? openExternalTab(src) : openNotes(name, "No screenshot URL configured for this project.");
   }
 

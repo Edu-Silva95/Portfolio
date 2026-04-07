@@ -7,6 +7,7 @@ export default function DesktopIcon({
   icon,
   x = 0,
   y = 0,
+  dropPath = null,
   onClick,
   onSelect,
   onDoubleClick,
@@ -48,6 +49,7 @@ export default function DesktopIcon({
       elRef.current.style.willChange = "";
       elRef.current.style.transition = "";
       elRef.current.style.zIndex = "";
+      elRef.current.style.pointerEvents = "";
     }
   };
 
@@ -145,6 +147,8 @@ export default function DesktopIcon({
         // Make sure the dragged icon stays above windows.
         const base = typeof window !== "undefined" ? (window.__appZIndex || 1000) : 1000;
         elRef.current.style.zIndex = String(base + 5000);
+        // Allow elementFromPoint() on pointer-up to detect the window beneath.
+        elRef.current.style.pointerEvents = "none";
       }
 
       elRef.current?.setPointerCapture(e.pointerId);
@@ -192,13 +196,26 @@ export default function DesktopIcon({
     // If dropped over an open folder window / folder row (anything with data-drop-path), treat as a move.
     // Important: ignore any drop targets that belong to the desktop itself to avoid interfering with normal rearranging.
     try {
-      const dropNode = typeof document !== "undefined" ? document.elementFromPoint(e.clientX, e.clientY) : null;
-      const target = dropNode?.closest?.("[data-drop-path]");
-      const dropPath = target?.getAttribute?.("data-drop-path");
-      const onDesktop = !!dropNode?.closest?.('[data-desktop-root="1"]');
+      const nodes =
+        typeof document !== "undefined" && typeof document.elementsFromPoint === "function"
+          ? document.elementsFromPoint(e.clientX, e.clientY)
+          : [typeof document !== "undefined" ? document.elementFromPoint(e.clientX, e.clientY) : null].filter(Boolean);
+
+      let dropPath = null;
+      for (const node of nodes || []) {
+        if (!node) continue;
+        const target = node.closest?.("[data-drop-path]");
+        const p = target?.getAttribute?.("data-drop-path");
+        if (p && p !== "This PC > Desktop") {
+          dropPath = p;
+          break;
+        }
+      }
+
       const keys = Array.isArray(dragItemKeys) && dragItemKeys.length > 0 ? dragItemKeys : [id];
-      if (!onDesktop && dropPath && dropPath !== "This PC > Desktop" && typeof moveItems === "function") {
+      if (dropPath && dropPath !== "This PC > Desktop" && typeof moveItems === "function") {
         moveItems({ fromPath: "This PC > Desktop", toPath: dropPath, itemKeys: keys });
+        if (elRef.current) elRef.current.style.pointerEvents = "";
         window.setTimeout(() => {
           dragState.current.justDragged = false;
         }, 0);
@@ -207,6 +224,8 @@ export default function DesktopIcon({
     } catch {
       // ignore
     }
+
+    if (elRef.current) elRef.current.style.pointerEvents = "";
 
     const rect = elRef.current?.parentElement?.getBoundingClientRect();
     if (!rect) return;
@@ -225,6 +244,7 @@ export default function DesktopIcon({
     <div
       ref={elRef}
       data-selected={selected}
+      data-drop-path={typeof dropPath === "string" && dropPath ? dropPath : undefined}
       className={`no-touch-callout flex flex-col items-center cursor-pointer select-none ${inline ? "relative" : "absolute"} rounded-md p-2 w-20 active:opacity-75 transition-all duration-150 ${
         selected ? "bg-white/10 z-50" : "hover:bg-white/10"
       }`}

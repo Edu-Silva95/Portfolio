@@ -3,6 +3,7 @@ import DesktopIcon from "./DesktopIcon";
 import useLongPressContextMenu from "../hooks/useLongPressContextMenu";
 import useMarqueeSelect from "../hooks/useMarqueeSelect";
 import { useFileSystem } from "../context/FileSystemContext";
+import { readFsItemDndDataTransfer } from "../utils/dragDropPayload";
 
 export default function Desktop({
   icons = [],
@@ -23,8 +24,6 @@ export default function Desktop({
   const groupPreviewFrame = useRef(null);
   const groupPreviewNext = useRef(null);
 
-  const DND_MIME = "application/x-desktop-portfolio-fs-item";
-
   const handleDragOverDesktop = (e) => {
     if (typeof moveItems !== "function") return;
     e.preventDefault();
@@ -38,13 +37,26 @@ export default function Desktop({
     if (typeof moveItems !== "function") return;
     e.preventDefault();
     try {
-      const raw = e.dataTransfer.getData(DND_MIME);
-      if (!raw) return;
-      const payload = JSON.parse(raw);
+      const payload = readFsItemDndDataTransfer(e.dataTransfer);
       const fromPath = payload?.fromPath;
       const itemKeys = payload?.itemKeys;
       if (!fromPath || !Array.isArray(itemKeys) || itemKeys.length === 0) return;
-      moveItems({ fromPath, toPath: "This PC > Desktop", itemKeys });
+
+      // If dropped over a desktop folder icon (has a more specific data-drop-path), move into that folder.
+      let toPath = "This PC > Desktop";
+      if (typeof document !== "undefined" && typeof document.elementsFromPoint === "function") {
+        const nodes = document.elementsFromPoint(e.clientX, e.clientY) || [];
+        for (const node of nodes) {
+          const target = node?.closest?.("[data-drop-path]");
+          const p = target?.getAttribute?.("data-drop-path");
+          if (p && p !== "This PC > Desktop") {
+            toPath = p;
+            break;
+          }
+        }
+      }
+
+      moveItems({ fromPath, toPath, itemKeys });
     } catch {
     }
   };
@@ -189,6 +201,14 @@ export default function Desktop({
         const displayY = preview ? preview.y : it.y;
         const isGroup = selectedIds.includes(it.id) && selectedIds.length > 1;
         const dragItemKeys = isGroup ? selectedIds : [it.id];
+
+        const dropPath = (() => {
+          if (!it?.isFolder) return null;
+          const p = typeof it?.targetPath === "string" ? it.targetPath.trim() : "";
+          if (p) return p.startsWith("This PC") ? p : `This PC > ${p}`;
+          const name = String(it?.name || it?.label || "").trim();
+          return name ? `This PC > Desktop > ${name}` : null;
+        })();
         return (
           <DesktopIcon
             key={it.id}
@@ -197,6 +217,7 @@ export default function Desktop({
             icon={it.icon}
             x={displayX}
             y={displayY}
+            dropPath={dropPath}
             isShortcut={!!it.isShortcut}
             dragItemKeys={dragItemKeys}
             onDragEnd={() => clearGroupPreview(it.id)}
