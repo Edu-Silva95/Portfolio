@@ -32,7 +32,7 @@ function App() {
   const openableIds = Object.keys(windowsConfig);
   // split state into hooks
     // Desktop icon state is now stored in FileSystemContext
-    const { getDesktopIcons, setDesktopIcons, findFreePosition, updateDesktopIconPosition, createFolder } = useFileSystem();
+    const { getDesktopIcons, setDesktopIcons, findFreePosition, updateDesktopIconPosition, createFolder, clipboard, copyItems, pasteItems } = useFileSystem();
     const icons = getDesktopIcons();
     const [draggingPositions, _setDraggingPositions] = useState({});
     const [selectedIds, setSelectedIds] = useState([]);
@@ -86,6 +86,9 @@ function App() {
 
   const contextMenuItems = buildDesktopContextMenuItems({
     contextMenu,
+    clipboard,
+    copyItems,
+    pasteItems,
     icons,
     setIcons: setDesktopIcons,
     windowsConfig,

@@ -47,7 +47,7 @@ export default function ProjectsFolder({
   const [viewMode, setViewMode] = useState("list");
   const [selectedIds, setSelectedIds] = useState([]);
 
-  const { fileTree, setFileTree } = useFileSystem();
+  const { fileTree, setFileTree, copyItems } = useFileSystem();
 
   const backgroundLongPress = useLongPressContextMenu({
     enabled: !!onContextMenuRequested,
@@ -204,6 +204,14 @@ export default function ProjectsFolder({
                   item,
                   onOpen: handleItemDoubleClick,
                   onCreateShortcut: () => onCreateDesktopShortcut?.(item, currentPath),
+                  onCopy: () => {
+                    const itemKey = item?.id ?? item?.name;
+                    if (!itemKey) return;
+                    const selectedSet = new Set(selectedIds);
+                    const shouldCopyGroup = selectedIds.length > 1 && selectedSet.has(itemKey);
+                    const keysToCopy = shouldCopyGroup ? selectedIds : [itemKey];
+                    copyItems?.({ fromPath: globalPath, fromListKey: "content", itemKeys: keysToCopy });
+                  },
                   onRename: handleRename,
                   onDelete: handleDelete,
                 })

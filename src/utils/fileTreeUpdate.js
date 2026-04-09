@@ -29,6 +29,31 @@ const cloneEntryWithContent = (entry) => {
   next.content = list;
   return next;
 };
+
+const cloneEntryDeep = (entry, transformItem = null) => {
+  const next = entry && typeof entry === "object" ? { ...entry } : {};
+  const cloneList = (list) => {
+    if (!Array.isArray(list)) return [];
+    return list.map((it) => {
+      if (!it || typeof it !== "object") return it;
+      const cloned = { ...it };
+      return typeof transformItem === "function" ? (transformItem(cloned) || cloned) : cloned;
+    });
+  };
+
+  if (Array.isArray(next.content)) next.content = cloneList(next.content);
+  if (Array.isArray(next.folders)) next.folders = cloneList(next.folders);
+  if (Array.isArray(next.drives)) next.drives = cloneList(next.drives);
+
+  // Ensure list props exist as arrays when the original did.
+  if (entry && typeof entry === "object") {
+    if (Array.isArray(entry.content) && !Array.isArray(next.content)) next.content = [];
+    if (Array.isArray(entry.folders) && !Array.isArray(next.folders)) next.folders = [];
+    if (Array.isArray(entry.drives) && !Array.isArray(next.drives)) next.drives = [];
+  }
+
+  return next;
+};
 // Moves items from one folder to another within the file tree, handling both the source and destination updates, ensuring unique naming in the destination, and also moving any nested folder structures if a folder is moved.
 const collectSubtreeKeys = (tree, rootPath) => {
   const prefix = `${rootPath} >`;
@@ -142,6 +167,106 @@ export const moveFileTreeItems = (
 
   if (!changed) return prevTree;
   return nextTree;
+};
+
+// Copy items from one folder to another within the file tree, without removing them from the source.
+// Supports copying folder subtrees and resolves naming conflicts in the destination.
+export const copyFileTreeItems = (
+  prevTree,
+  {
+    fromPath,
+    toPath,
+    itemKeys = [],
+    fromListKey = "content",
+    toListKey = "content",
+    transformCopiedItem = null,
+    transformCopiedSubtreeItem = null,
+  } = {}
+) => {
+  if (!prevTree || typeof prevTree !== "object") return prevTree;
+
+  const resolvedFrom = resolveThisPcPath(fromPath);
+  const resolvedTo = resolveThisPcPath(toPath);
+  if (!resolvedFrom || !resolvedTo) return prevTree;
+
+  const keys = Array.from(new Set((Array.isArray(itemKeys) ? itemKeys : [itemKeys]).filter(Boolean)));
+  if (keys.length === 0) return prevTree;
+
+  const fromEntryRaw = prevTree[resolvedFrom];
+  const fromListRaw = fromEntryRaw?.[fromListKey];
+  if (!Array.isArray(fromListRaw) || fromListRaw.length === 0) return prevTree;
+
+  const nextTree = { ...prevTree };
+
+  // Clone destination entry (and clone source too if from==to and listKey differs).
+  const toEntryRaw = prevTree[resolvedTo];
+  const toEntry =
+    toListKey === "content"
+      ? cloneEntryWithContent(toEntryRaw)
+      : { ...(toEntryRaw || {}), [toListKey]: Array.isArray(toEntryRaw?.[toListKey]) ? [...toEntryRaw[toListKey]] : [] };
+  nextTree[resolvedTo] = toEntry;
+
+  // If copying into the same entry+list, operate on the single cloned list.
+  const toList = Array.isArray(toEntry[toListKey]) ? toEntry[toListKey] : (toEntry[toListKey] = []);
+  const existingNames = new Set(toList.map((it) => String(it?.name || "")));
+
+  let changed = false;
+  // Process each item to copy.
+  for (const key of keys) {
+    const item = fromListRaw.find((it) => getTreeItemKey(it) === key);
+    if (!item) continue;
+
+    const itemIsFolder = isFolderLikeItem(item);
+
+    // Disallow copying a folder into itself / its descendants (avoids weird recursion).
+    if (itemIsFolder) {
+      const oldFolderPath = `${resolvedFrom} > ${item.name}`;
+      if (resolvedTo === oldFolderPath || resolvedTo.startsWith(`${oldFolderPath} >`)) {
+        continue;
+      }
+    }
+
+    const finalName = makeUniqueName(item.name, existingNames);
+    existingNames.add(finalName);
+
+    let copiedItem = {
+      ...item,
+      ...(itemIsFolder ? { isFolder: true } : null),
+      ...(finalName !== item.name && !item.originalName ? { originalName: item.name } : null),
+      name: finalName,
+      label: finalName,
+    };
+    // Allow transforming the copied item (e.g. to assign a new ID) and also transforming items in the copied subtree.
+    if (typeof transformCopiedItem === "function") {
+      copiedItem = transformCopiedItem(copiedItem, {
+        fromPath: resolvedFrom,
+        toPath: resolvedTo,
+        oldName: item.name,
+        newName: finalName,
+      }) || copiedItem;
+    }
+
+    toList.unshift(copiedItem);
+    changed = true;
+    // If it's a folder, copy its subtree keys.
+    if (itemIsFolder) {
+      const oldRoot = `${resolvedFrom} > ${item.name}`;
+      const newRoot = `${resolvedTo} > ${finalName}`;
+
+      const subtreeKeys = collectSubtreeKeys(prevTree, oldRoot);
+      if (subtreeKeys.length === 0) {
+        if (!nextTree[newRoot]) nextTree[newRoot] = { content: [] };
+      } else {
+        subtreeKeys.forEach((k) => {
+          const suffix = k.slice(oldRoot.length);
+          const nk = `${newRoot}${suffix}`;
+          nextTree[nk] = cloneEntryDeep(prevTree[k] || {}, transformCopiedSubtreeItem);
+        });
+      }
+    }
+  }
+
+  return changed ? nextTree : prevTree;
 };
 
 export const updateFileTreeList = (prevTree, path, listKey, updater) => {

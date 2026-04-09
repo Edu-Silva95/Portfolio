@@ -46,7 +46,7 @@ export default function Documents({
   const [itemCount, setItemCount] = useState(0);
   const [selectedIds, setSelectedIds] = useState([]);
 
-  const { fileTree, setFileTree, handleContextMenu } = useFileSystem();
+  const { fileTree, setFileTree, handleContextMenu, copyItems } = useFileSystem();
   const globalPath = currentPath.startsWith("This PC") ? currentPath : `This PC > ${currentPath}`;
   const currentContent = fileTree[globalPath]?.content || [];
 
@@ -177,6 +177,13 @@ export default function Documents({
 
   const openContextMenuForItem = (item, e) => {
     if (!onContextMenuRequested) return;
+
+    const itemKey = getItemKey(item);
+    const selectedSet = new Set(selectedIds);
+    const selectedItems = currentContent.filter((it) => selectedSet.has(getItemKey(it)));
+    const shouldCopyGroup = selectedItems.length > 1 && selectedSet.has(itemKey);
+    const keysToCopy = shouldCopyGroup ? selectedItems.map((it) => getItemKey(it)) : [itemKey];
+
     onContextMenuRequested({
       x: e.clientX,
       y: e.clientY,
@@ -184,6 +191,7 @@ export default function Documents({
       items: [
         { key: "open", label: "Open", onClick: () => handleItemDoubleClick(item) },
         { key: "shortcut", label: "Create shortcut", onClick: () => onCreateDesktopShortcut?.(item, currentPath) },
+        { key: "copy", label: "Copy", onClick: () => copyItems?.({ fromPath: globalPath, fromListKey: "content", itemKeys: keysToCopy }) },
         { key: "rename", label: "Rename", onClick: () => handleRename(item) },
         { key: "delete", label: "Delete", onClick: () => handleDelete(item) },
       ],

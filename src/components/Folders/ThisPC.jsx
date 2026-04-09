@@ -29,7 +29,7 @@ export default function ThisPC({ onClose, onMinimize, minimized = false, minimiz
   const [itemCount, setItemCount] = useState(0);
   const [selectedIds, setSelectedIds] = useState([]);
 
-  const { fileTree, setFileTree, handleContextMenu } = useFileSystem();
+  const { fileTree, setFileTree, handleContextMenu, copyItems } = useFileSystem();
   const currentData = fileTree[currentPath] || fileTree["This PC"];
 
   const backgroundLongPress = useLongPressContextMenu({
@@ -192,6 +192,14 @@ export default function ThisPC({ onClose, onMinimize, minimized = false, minimiz
   // Build the right-click menu for a list item.
   const openContextMenuForItem = (path, listKey, item, e) => {
     if (!onContextMenuRequested) return;
+
+    const itemKey = getItemKey(item);
+    const selectedSet = new Set(selectedIds);
+    const list = getList(path, listKey);
+    const selectedItems = list.filter((it) => selectedSet.has(getItemKey(it)));
+    const shouldCopyGroup = selectedItems.length > 1 && selectedSet.has(itemKey);
+    const keysToCopy = shouldCopyGroup ? selectedItems.map((it) => getItemKey(it)) : [itemKey];
+
     onContextMenuRequested({
       x: e.clientX,
       y: e.clientY,
@@ -199,6 +207,7 @@ export default function ThisPC({ onClose, onMinimize, minimized = false, minimiz
       items: [
         { key: "open", label: "Open", onClick: () => handleItemDoubleClick(item) },
         { key: "shortcut", label: "Create shortcut", onClick: () => onCreateDesktopShortcut?.(item, path) },
+        ...(listKey === "drives" ? [] : [{ key: "copy", label: "Copy", onClick: () => copyItems?.({ fromPath: path, fromListKey: listKey, itemKeys: keysToCopy }) }]),
         { key: "rename", label: "Rename", onClick: () => handleRename(path, listKey, item) },
         { key: "delete", label: "Delete", onClick: () => handleDelete(path, listKey, item) },
       ],

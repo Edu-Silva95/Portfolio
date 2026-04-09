@@ -33,7 +33,7 @@ export default function ProjectInfo({
   });
   const [selectedIds, setSelectedIds] = useState([]);
   const [itemCount, setItemCount] = useState(0);
-  const { fileTree, setFileTree, handleContextMenu } = useFileSystem();
+  const { fileTree, setFileTree, handleContextMenu, copyItems } = useFileSystem();
 
   const backgroundLongPress = useLongPressContextMenu({
     enabled: !!onContextMenuRequested,
@@ -44,7 +44,6 @@ export default function ProjectInfo({
           clientX: x,
           clientY: y,
           preventDefault: () => { },
-          stopPropagation: () => { },
         },
         currentPath,
         onContextMenuRequested
@@ -129,6 +128,14 @@ export default function ProjectInfo({
         item,
         onOpen: handleItemDoubleClick,
         onCreateShortcut: () => onCreateDesktopShortcut?.(item, currentPath),
+        onCopy: () => {
+          const itemKey = getItemKey(item);
+          const selectedSet = new Set(selectedIds);
+          const selectedItems = currentItems.filter((it) => selectedSet.has(getItemKey(it)));
+          const shouldCopyGroup = selectedItems.length > 1 && selectedSet.has(itemKey);
+          const keysToCopy = shouldCopyGroup ? selectedItems.map((it) => getItemKey(it)) : [itemKey];
+          copyItems?.({ fromPath: currentPath, fromListKey: "content", itemKeys: keysToCopy });
+        },
         onRename: handleRename,
         onDelete: handleDelete,
       })

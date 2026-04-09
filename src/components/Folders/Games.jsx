@@ -7,7 +7,7 @@ import { resolveProjectForPath } from "../../utils/projectResolve";
 import { tryOpenImagePlayer, tryOpenProjectVirtualItem, tryOpenTargetWindowItem } from "../../utils/folderOpenUtils";
 
 export function GamesContent({ basePath = "This PC > Games", currentPath = null, onFolderOpen = null, searchQuery = "", viewMode = "list", onCountChange, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, onOpenWindow = null, updateWindowPath = null, selectedIds: selectedIdsProp = null, onSelectionChange = null }) {
-  const { fileTree, setFileTree, handleContextMenu } = useFileSystem();
+  const { fileTree, setFileTree, handleContextMenu, copyItems } = useFileSystem();
   const [localSelectedIds, setLocalSelectedIds] = useState([]);
   // Allow parent to control selection when provided.
   const selectedIds = Array.isArray(selectedIdsProp) ? selectedIdsProp : localSelectedIds;
@@ -147,6 +147,13 @@ export function GamesContent({ basePath = "This PC > Games", currentPath = null,
   // Right-click context menu for items.
   const openContextMenuForItem = (item, e) => {
     if (!onContextMenuRequested) return;
+
+    const itemKey = getItemKey(item);
+    const selectedSet = new Set(selectedIds);
+    const selectedItems = currentItems.filter((it) => selectedSet.has(getItemKey(it)));
+    const shouldCopyGroup = selectedItems.length > 1 && selectedSet.has(itemKey);
+    const keysToCopy = shouldCopyGroup ? selectedItems.map((it) => getItemKey(it)) : [itemKey];
+
     onContextMenuRequested({
       x: e.clientX,
       y: e.clientY,
@@ -154,6 +161,7 @@ export function GamesContent({ basePath = "This PC > Games", currentPath = null,
       items: [
         { key: "open", label: "Open", onClick: () => handleOpen(item) },
         { key: "shortcut", label: "Create shortcut", onClick: () => onCreateDesktopShortcut?.(item, actionPath) },
+        { key: "copy", label: "Copy", onClick: () => copyItems?.({ fromPath: globalPath, fromListKey: "content", itemKeys: keysToCopy }) },
         { key: "rename", label: "Rename", onClick: () => handleRename(item) },
         { key: "delete", label: "Delete", onClick: () => handleDelete(item) },
       ],

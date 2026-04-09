@@ -7,7 +7,7 @@ import { buildStandardItemContextMenu } from "../../utils/standardItemContextMen
 import { tryOpenImagePlayer, tryOpenTargetWindowItem } from "../../utils/folderOpenUtils";
 
 export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery = "", viewMode = "list", onCountChange, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, onOpenWindow = null, updateWindowPath = null }) {
-  const { fileTree, setFileTree, handleContextMenu } = useFileSystem();
+  const { fileTree, setFileTree, handleContextMenu, copyItems } = useFileSystem();
   const [selectedIds, setSelectedIds] = useState([]);
 
   const globalBase = resolveThisPcPath(basePath);
@@ -106,6 +106,14 @@ export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery
         item,
         onOpen: () => handleItemDoubleClick(item),
         onCreateShortcut: () => onCreateDesktopShortcut?.(item, globalCurrent),
+        onCopy: () => {
+          const itemKey = getItemKey(item);
+          const selectedSet = new Set(selectedIds);
+          const selectedItems = currentContent.filter((it) => selectedSet.has(getItemKey(it)));
+          const shouldCopyGroup = selectedItems.length > 1 && selectedSet.has(itemKey);
+          const keysToCopy = shouldCopyGroup ? selectedItems.map((it) => getItemKey(it)) : [itemKey];
+          copyItems?.({ fromPath: globalCurrent, fromListKey: "content", itemKeys: keysToCopy });
+        },
         onRename: () => handleRename(item),
         onDelete: () => handleDelete(item),
       })

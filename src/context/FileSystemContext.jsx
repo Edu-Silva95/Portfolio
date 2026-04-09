@@ -1,11 +1,12 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { pathMap as initialPathMap } from "../config/fileSystemData";
 import { initialIcons } from "../config/desktopConfig";
-import { isFolderLikeItem, moveFileTreeItems, resolveThisPcPath } from "../utils/fileTreeUpdate";
+import { copyFileTreeItems, isFolderLikeItem, moveFileTreeItems, resolveThisPcPath } from "../utils/fileTreeUpdate";
 
 const FileSystemContext = createContext(null);
 
 export function FileSystemProvider({ children }) {
+  const [clipboard, setClipboard] = useState(null);
   const [fileTree, setFileTree] = useState(() => {
     const tree = JSON.parse(JSON.stringify(initialPathMap || {}));
 
@@ -329,6 +330,112 @@ export function FileSystemProvider({ children }) {
     });
   }
 
+  const normalizeKeys = (keys) => {
+    const list = Array.isArray(keys) ? keys : [keys];
+    return Array.from(new Set(list.filter(Boolean)));
+  };
+
+  const newId = (prefix = "item") => {
+    const uuid = (typeof crypto !== "undefined" && crypto?.randomUUID) ? crypto.randomUUID() : null;
+    return `${prefix}-${uuid || `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
+  };
+
+  function copyItems({ fromPath, itemKeys, fromListKey = "content" } = {}) {
+    const resolvedFrom = resolveThisPcPath(fromPath);
+    const keys = normalizeKeys(itemKeys);
+    if (!resolvedFrom || keys.length === 0) return;
+
+    // Exception: devices/drives should not be copyable.
+    if (resolvedFrom === "This PC" && fromListKey === "drives") return;
+
+    setClipboard({ kind: "fs-items", fromPath: resolvedFrom, fromListKey, itemKeys: keys, copiedAt: Date.now() });
+  }
+
+  function pasteItems({ toPath, toListKey = "content", position = null } = {}) {
+    const clip = clipboard;
+    if (!clip || clip.kind !== "fs-items") return;
+
+    const resolvedTo = resolveThisPcPath(toPath);
+    if (!resolvedTo) return;
+
+    // Avoid pasting into This PC root (ambiguous: folders vs drives).
+    if (resolvedTo === "This PC") return;
+
+    const resolvedFrom = resolveThisPcPath(clip.fromPath);
+    const keys = normalizeKeys(clip.itemKeys);
+    if (!resolvedFrom || keys.length === 0) return;
+
+    const isDestDesktop = resolvedTo === "This PC > Desktop";
+
+    setFileTree((prev) => {
+      let workingDesktop = isDestDesktop
+        ? (Array.isArray(prev["This PC > Desktop"]?.content) ? [...prev["This PC > Desktop"].content] : [])
+        : null;
+
+      const tryUsePosition = (pos) => {
+        if (!isDestDesktop) return null;
+        if (!pos || !Number.isFinite(pos.x) || !Number.isFinite(pos.y)) return null;
+        const occupied = new Set((workingDesktop || []).map((it) => `${it.x}:${it.y}`));
+        return occupied.has(`${pos.x}:${pos.y}`) ? null : { x: pos.x, y: pos.y };
+      };
+
+      let firstPlaced = false;
+
+      return copyFileTreeItems(prev, {
+        fromPath: resolvedFrom,
+        toPath: resolvedTo,
+        itemKeys: keys,
+        fromListKey: clip.fromListKey || "content",
+        toListKey,
+        transformCopiedSubtreeItem: (item) => {
+          // Regenerate ids inside copied folder subtrees to keep them independent.
+          if (item && typeof item === "object" && item.id) return { ...item, id: newId("item") };
+          return item;
+        },
+        transformCopiedItem: (item, ctx) => {
+          const next = { ...item };
+
+          // Make copied items independent.
+          if (next.id) next.id = newId("item");
+
+          const looksLikeFolder = isFolderLikeItem(next);
+          if (looksLikeFolder) next.isFolder = true;
+
+          // Desktop-specific: position + folder navigation metadata.
+          if (isDestDesktop) {
+            if (!next.id) next.id = newId("item");
+            if (!next.label) next.label = next.name;
+
+            const pos = !firstPlaced ? (tryUsePosition(position) || findFreePosition(workingDesktop || [])) : findFreePosition(workingDesktop || []);
+            firstPlaced = true;
+            next.x = pos.x;
+            next.y = pos.y;
+            workingDesktop = [...(workingDesktop || []), { ...next }];
+
+            if (looksLikeFolder) {
+              const newFolderPath = `${ctx.toPath} > ${ctx.newName}`;
+              next.targetWindowId = "thispc";
+              next.targetPath = newFolderPath;
+              next.isOpenable = true;
+              if (!next.type) next.type = "File folder";
+            }
+          } else {
+            // If copying *out of* desktop, strip layout-only props.
+            if ("x" in next) delete next.x;
+            if ("y" in next) delete next.y;
+
+            // If the source item carried a targetPath (desktop folder), update it.
+            if (looksLikeFolder && typeof next.targetPath === "string") {
+              next.targetPath = `${ctx.toPath} > ${ctx.newName}`;
+            }
+          }
+
+          return next;
+        },
+      });
+    });
+  }
+
   function createFolder(path, name = "New folder", options = null) {
     setFileTree((prev) => {
       const entry = prev[path] || {};
@@ -424,6 +531,9 @@ export function FileSystemProvider({ children }) {
     console.log("handleContextMenu invoked for", currentPath);
     e.preventDefault();
     e.stopPropagation();
+
+    const canPasteHere = !!(clipboard && clipboard.kind === "fs-items" && currentPath && currentPath !== "This PC");
+
     onContextMenuRequested?.({
       x: e.clientX,
       y: e.clientY,
@@ -431,13 +541,14 @@ export function FileSystemProvider({ children }) {
       currentFolderPath: currentPath,
       items: [
         { key: "new", label: "New folder", onClick: () => createFolder(currentPath) },
+        ...(canPasteHere ? [{ key: "paste", label: "Paste", onClick: () => pasteItems({ toPath: currentPath }) }] : []),
         { key: "refresh", label: "Refresh", onClick: () => window.location.reload() },
       ],
     });
   }
 
   return (
-    <FileSystemContext.Provider value={{ fileTree, setFileTree, createFolder, moveItems, handleContextMenu, getDesktopIcons, setDesktopIcons, findFreePosition, updateDesktopIconPosition }}>
+    <FileSystemContext.Provider value={{ fileTree, setFileTree, clipboard, setClipboard, copyItems, pasteItems, createFolder, moveItems, handleContextMenu, getDesktopIcons, setDesktopIcons, findFreePosition, updateDesktopIconPosition }}>
       {children}
     </FileSystemContext.Provider>
   );

@@ -2,6 +2,9 @@ import { openDesktopIcon } from "./desktopIconRouting";
 // This file builds the context menu items for desktop icons and the desktop background, centralizing all related logic in one place for better maintainability and separation of concerns.
 export const buildDesktopContextMenuItems = ({
   contextMenu,
+  clipboard,
+  copyItems,
+  pasteItems,
   icons,
   setIcons,
   windowsConfig,
@@ -21,9 +24,28 @@ export const buildDesktopContextMenuItems = ({
   paddingX,
   paddingY,
 }) => {
+  const getNextPastePosition = () => {
+    const rect = document.documentElement.getBoundingClientRect();
+    const localX = Math.max(0, contextMenu.x - rect.left);
+    const localY = Math.max(0, contextMenu.y - rect.top);
+    const col = Math.max(0, Math.round((localX - paddingX) / iconWidth));
+    const row = Math.max(0, Math.round((localY - paddingY) / iconHeight));
+    const nx = paddingX + col * iconWidth;
+    const ny = paddingY + row * iconHeight;
+    const occupied = new Set(icons.map((it) => `${it.x}:${it.y}`));
+    return occupied.has(`${nx}:${ny}`) ? findFreePosition(icons) : { x: nx, y: ny };
+  };
+
+
   if (contextMenu.items) return contextMenu.items;
 
   if (contextMenu.targetId) {
+    const targetIcon = icons.find((it) => it.id === contextMenu.targetId);
+    const isRecycleBinIcon =
+      contextMenu.targetId === "recycle" ||
+      targetIcon?.type === "Recycle Bin" ||
+      targetIcon?.label === "Recycle Bin";
+
     return [
       {
         key: "open",
@@ -42,6 +64,73 @@ export const buildDesktopContextMenuItems = ({
           closeContextMenu();
         },
       },
+      ...(!isRecycleBinIcon
+        ? [
+            {
+              key: "copy",
+              label: "Copy",
+              onClick: () => {
+                const icon = icons.find((it) => it.id === contextMenu.targetId);
+                if (!icon) {
+                  closeContextMenu();
+                  return;
+                }
+
+                const shouldCopyGroup = selectedIds.includes(icon.id) && selectedIds.length > 1;
+                const idsToCopy = shouldCopyGroup ? selectedIds : [icon.id];
+
+                // Desktop icons are backed by FileSystemContext content at "This PC > Desktop".
+                copyItems?.({ fromPath: "This PC > Desktop", fromListKey: "content", itemKeys: idsToCopy });
+
+                // Keep selection behavior the user already expects.
+                setSelectedIds((prev) => (prev.includes(icon.id) ? prev : [...prev, icon.id]));
+                closeContextMenu();
+              },
+            },
+          ]
+        : []),
+      {
+        key: "rename",
+        label: "Rename",
+        onClick: () => {
+          const item = icons.find(
+            (iconItem) => iconItem.id === contextMenu.targetId,
+          );
+          const name = prompt("Rename", item?.label || "");
+          if (name) {
+            setIcons((prev) =>
+              prev.map((iconItem) =>
+                iconItem.id === contextMenu.targetId
+                  ? { ...iconItem, label: name }
+                  : iconItem,
+              ),
+            );
+          }
+          closeContextMenu();
+        },
+      },
+      ...(!isRecycleBinIcon
+        ? [
+            {
+              key: "delete",
+              label: "Delete",
+              onClick: () => {
+                const targetId = contextMenu.targetId;
+                const shouldDeleteGroup =
+                  selectedIds.includes(targetId) && selectedIds.length > 1;
+                const idsToDelete = shouldDeleteGroup ? selectedIds : [targetId];
+                if (!confirmDesktopDelete(idsToDelete.length)) {
+                  closeContextMenu();
+                  return;
+                }
+
+                idsToDelete.forEach((id) => moveDesktopIconToRecycleBin(id));
+                setSelectedIds([]);
+                closeContextMenu();
+              },
+            },
+          ]
+        : []),
       {
         key: "inspect",
         label: "Inspect element",
@@ -55,45 +144,6 @@ export const buildDesktopContextMenuItems = ({
         label: "View page source",
         onClick: () => {
           viewPageSource();
-          closeContextMenu();
-        },
-      },
-      {
-        key: "rename",
-        label: "Rename",
-        onClick: () => {
-          const item = icons.find((iconItem) => iconItem.id === contextMenu.targetId);
-          const name = prompt("Rename", item?.label || "");
-          if (name) {
-            setIcons((prev) =>
-              prev.map((iconItem) =>
-                iconItem.id === contextMenu.targetId ? { ...iconItem, label: name } : iconItem
-              )
-            );
-          }
-          closeContextMenu();
-        },
-      },
-      {
-        key: "delete",
-        label: "Delete",
-        onClick: () => {
-          if (contextMenu.targetId === "recycle") {
-            alert("Recycle Bin cannot be deleted.");
-            closeContextMenu();
-            return;
-          }
-
-          const targetId = contextMenu.targetId;
-          const shouldDeleteGroup = selectedIds.includes(targetId) && selectedIds.length > 1;
-          const idsToDelete = shouldDeleteGroup ? selectedIds : [targetId];
-          if (!confirmDesktopDelete(idsToDelete.length)) {
-            closeContextMenu();
-            return;
-          }
-
-          idsToDelete.forEach((id) => moveDesktopIconToRecycleBin(id));
-          setSelectedIds([]);
           closeContextMenu();
         },
       },
@@ -113,15 +163,7 @@ export const buildDesktopContextMenuItems = ({
       key: "new",
       label: "New folder",
       onClick: () => {
-        const rect = document.documentElement.getBoundingClientRect();
-        const localX = Math.max(0, contextMenu.x - rect.left);
-        const localY = Math.max(0, contextMenu.y - rect.top);
-        const col = Math.max(0, Math.round((localX - paddingX) / iconWidth));
-        const row = Math.max(0, Math.round((localY - paddingY) / iconHeight));
-        const nx = paddingX + col * iconWidth;
-        const ny = paddingY + row * iconHeight;
-        const occupied = new Set(icons.map((it) => `${it.x}:${it.y}`));
-        const pos = occupied.has(`${nx}:${ny}`) ? findFreePosition(icons) : { x: nx, y: ny };
+        const pos = getNextPastePosition();
 
         if (typeof createFolder === "function") {
           createFolder("This PC > Desktop", "New folder", { position: pos });
@@ -153,21 +195,13 @@ export const buildDesktopContextMenuItems = ({
       key: "paste",
       label: "Paste",
       onClick: () => {
-          if (!contextMenu.copiedItem) {
-      closeContextMenu();
-      return; // Prevent paste if nothing was copied
-    }
-        const id = `pasted-${Date.now()}`;
-        const rect = document.documentElement.getBoundingClientRect();
-        const localX = Math.max(0, contextMenu.x - rect.left);
-        const localY = Math.max(0, contextMenu.y - rect.top);
-        const col = Math.max(0, Math.round((localX - paddingX) / iconWidth));
-        const row = Math.max(0, Math.round((localY - paddingY) / iconHeight));
-        const nx = paddingX + col * iconWidth;
-        const ny = paddingY + row * iconHeight;
-        const occupied = new Set(icons.map((it) => `${it.x}:${it.y}`));
-        const pos = occupied.has(`${nx}:${ny}`) ? findFreePosition(icons) : { x: nx, y: ny };
-        setIcons((prev) => [{ id, label: "Pasted", icon: "/icons/icons8-folder-94.png", x: pos.x, y: pos.y }, ...prev]);
+        const canPaste = clipboard?.kind === "fs-items";
+        if (!canPaste || typeof pasteItems !== "function") {
+          closeContextMenu();
+          return; // Prevent paste if nothing was copied
+        }
+
+        pasteItems({ toPath: "This PC > Desktop", position: getNextPastePosition() });
         closeContextMenu();
       },
     },
