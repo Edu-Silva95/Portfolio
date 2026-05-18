@@ -7,6 +7,7 @@ import FileTable from "./FileTable";
 import useFolderNavigation from "../../hooks/useFolderNavigation";
 import { buildPathSegments } from "../../utils/folderPath";
 import { openExternalUrl } from "../../utils/externalUrl";
+import { buildItemProperties } from "../../utils/itemProperties";
 import { resolveProjectForPath } from "../../utils/projectResolve";
 import { tryOpenImagePlayer, tryOpenProjectVirtualItem, tryOpenTargetWindowItem } from "../../utils/folderOpenUtils";
 import { resolveThisPcPath, updateFileTreeList } from "../../utils/fileTreeUpdate";
@@ -28,6 +29,7 @@ export default function ProjectsFolder({
   initialPath = "Documents > Projects",
   dataWindowId,
   onContextMenuRequested = null,
+  openProperties = null,
   onMoveToRecycleBin = null,
   onCreateDesktopShortcut = null,
   pendingRestores = null,
@@ -214,6 +216,7 @@ export default function ProjectsFolder({
                   },
                   onRename: handleRename,
                   onDelete: handleDelete,
+                  onProperties: () => openProperties?.(buildItemProperties({ item, currentPath: globalPath })),
                 })
               );
             }}

@@ -1,8 +1,13 @@
 import { useState } from "react";
 
-// inspector/mouse right - click menu 
 export default function useInspector() {
-  const [inspector, setInspector] = useState({ open: false, html: "", styles: {} });
+  const [inspector, setInspector] = useState({
+    open: false,
+    mode: "inspect",
+    html: "",
+    styles: {},
+    properties: null,
+  });
 
   const viewPageSource = () => {
     const w = window.open("", "_blank");
@@ -40,10 +45,21 @@ export default function useInspector() {
     keys.forEach((k) => {
       styles[k] = cs.getPropertyValue(k);
     });
-    setInspector({ open: true, html, styles });
+    setInspector({ open: true, mode: "inspect", html, styles, properties: null });
   };
 
-  const closeInspector = () => setInspector({ open: false, html: "", styles: {} });
+  const openProperties = (properties) => {
+    if (!properties) return;
+    setInspector({
+      open: true,
+      mode: "properties",
+      html: "",
+      styles: {},
+      properties,
+    });
+  };
 
-  return { inspector, viewPageSource, inspectElement, closeInspector };
+  const closeInspector = () => setInspector({ open: false, mode: "inspect", html: "", styles: {}, properties: null });
+
+  return { inspector, viewPageSource, inspectElement, openProperties, closeInspector };
 }

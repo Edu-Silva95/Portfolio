@@ -1,4 +1,5 @@
 import { openDesktopIcon } from "./desktopIconRouting";
+import { buildItemProperties } from "./itemProperties";
 // This file builds the context menu items for desktop icons and the desktop background, centralizing all related logic in one place for better maintainability and separation of concerns.
 export const buildDesktopContextMenuItems = ({
   contextMenu,
@@ -12,6 +13,7 @@ export const buildDesktopContextMenuItems = ({
   updateWindowPath,
   closeContextMenu,
   inspectElement,
+  openProperties,
   viewPageSource,
   selectedIds,
   setSelectedIds,
@@ -132,26 +134,16 @@ export const buildDesktopContextMenuItems = ({
           ]
         : []),
       {
-        key: "inspect",
-        label: "Inspect element",
-        onClick: () => {
-          inspectElement(contextMenu.targetId);
-          closeContextMenu();
-        },
-      },
-      {
-        key: "viewsource",
-        label: "View page source",
-        onClick: () => {
-          viewPageSource();
-          closeContextMenu();
-        },
-      },
-      {
         key: "properties",
         label: "Properties",
         onClick: () => {
-          alert(`Properties for ${contextMenu.targetId}`);
+          const targetIcon = icons.find((it) => it.id === contextMenu.targetId);
+          openProperties?.(
+            buildItemProperties({
+              item: targetIcon || { id: contextMenu.targetId, label: contextMenu.targetId },
+              currentPath: "This PC > Desktop",
+            })
+          );
           closeContextMenu();
         },
       },

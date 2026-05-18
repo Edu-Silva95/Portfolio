@@ -18,6 +18,7 @@ export function buildWindowExtraProps({
   icons,
   openableIds,
   openContextMenu,
+  openProperties,
   moveFolderItemToRecycleBin,
   createDesktopShortcut,
   pendingRestores,
@@ -25,6 +26,7 @@ export function buildWindowExtraProps({
 }) {
   const extraProps = {
     onContextMenuRequested: openContextMenu,
+    openProperties,
     onMoveToRecycleBin: moveFolderItemToRecycleBin,
     onCreateDesktopShortcut: createDesktopShortcut,
     pendingRestores,

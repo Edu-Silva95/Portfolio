@@ -7,6 +7,7 @@ import { buildPathSegments } from "../../utils/folderPath";
 import { useFileSystem } from "../../context/FileSystemContext";
 import useLongPressContextMenu from "../../hooks/useLongPressContextMenu";
 import { updateFileTreeList } from "../../utils/fileTreeUpdate";
+import { buildItemProperties } from "../../utils/itemProperties";
 import { buildStandardItemContextMenu } from "../../utils/standardItemContextMenu";
 import { openExternalUrl } from "../../utils/externalUrl";
 import { resolveProjectForPath } from "../../utils/projectResolve";
@@ -22,6 +23,7 @@ export default function ProjectInfo({
   updateWindowPath = null,
   onNavigateSystemPath = null,
   onContextMenuRequested = null,
+  openProperties = null,
   onMoveToRecycleBin = null,
   onCreateDesktopShortcut = null,
   closing = false,
@@ -138,6 +140,7 @@ export default function ProjectInfo({
         },
         onRename: handleRename,
         onDelete: handleDelete,
+        onProperties: () => openProperties?.(buildItemProperties({ item, currentPath })),
       })
     );
   };

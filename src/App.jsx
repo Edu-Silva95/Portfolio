@@ -50,7 +50,7 @@ function App() {
   const { openWindows, setOpenWindows, openWindow, closeWindow, toggleWindow, minimizeWindow, updateWindowPath } = useWindowsState(
     Object.keys(windowsConfig)
   );
-  const { inspector, viewPageSource, inspectElement, closeInspector } = useInspector();
+  const { inspector, viewPageSource, inspectElement, openProperties, closeInspector } = useInspector();
 
   // Desktop helpers come from FileSystemContext; no registration needed
   
@@ -96,6 +96,7 @@ function App() {
     updateWindowPath,
     closeContextMenu,
     inspectElement,
+    openProperties,
     viewPageSource,
     selectedIds,
     setSelectedIds,
@@ -136,8 +137,10 @@ function App() {
 
         <InspectorModal
           open={inspector.open}
+          mode={inspector.mode}
           html={inspector.html}
           styles={inspector.styles}
+          properties={inspector.properties}
           onClose={closeInspector}
         />
         {/* Render all open windows dynamically */}
@@ -158,6 +161,7 @@ function App() {
             icons,
             openableIds,
             openContextMenu,
+            openProperties,
             moveFolderItemToRecycleBin,
             createDesktopShortcut,
             pendingRestores,

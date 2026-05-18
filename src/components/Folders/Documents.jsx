@@ -10,6 +10,7 @@ import { PhotosContent } from "./Photos";
 import { GamesContent } from "./Games";
 import { resolveProjectForPath } from "../../utils/projectResolve";
 import { openExternalUrl } from "../../utils/externalUrl";
+import { buildItemProperties } from "../../utils/itemProperties";
 import { tryOpenImagePlayer, tryOpenProjectVirtualItem, tryOpenTargetWindowItem } from "../../utils/folderOpenUtils";
 
 export default function Documents({
@@ -27,6 +28,7 @@ export default function Documents({
   savedPath = null,
   savedHistory = null,
   onContextMenuRequested = null,
+  openProperties = null,
   onMoveToRecycleBin = null,
   onCreateDesktopShortcut = null,
   pendingRestores = null,
@@ -194,6 +196,7 @@ export default function Documents({
         { key: "copy", label: "Copy", onClick: () => copyItems?.({ fromPath: globalPath, fromListKey: "content", itemKeys: keysToCopy }) },
         { key: "rename", label: "Rename", onClick: () => handleRename(item) },
         { key: "delete", label: "Delete", onClick: () => handleDelete(item) },
+        { key: "properties", label: "Properties", onClick: () => openProperties?.(buildItemProperties({ item, currentPath: globalPath })) },
       ],
     });
   };
@@ -207,6 +210,7 @@ export default function Documents({
     viewMode,
     onCountChange: setItemCount,
     onContextMenuRequested,
+    openProperties,
     onMoveToRecycleBin,
     onCreateDesktopShortcut,
     pendingRestores,

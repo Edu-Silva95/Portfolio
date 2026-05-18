@@ -170,6 +170,43 @@ export const projectsData = [
       live: "https://portfolio-hazel-psi-92.vercel.app/",
     },
   },
+    {
+    id: "scamstop",
+    name: "ScamStop",
+    tagline: "A simple scam detection app",
+    description: [
+      "A web application that helps users identify and report potential scams.",
+      "Built with React, Vite, and Node.js.",
+      "Users can submit suspicious URLs, which are then analyzed and stored in a database.",
+      "The app provides a simple interface for users to check URLs against the database.",
+    ],
+    tech: [
+      "React.js",
+      "Node.js",
+      "Vite",
+      "JavaScript",
+      "CSS",
+    ],
+    features: [
+      "URL submission form for users to report potential scams",
+      "Backend API to analyze and store submitted URLs",
+      "Database to keep track of reported scams",
+      "Interface for users to check URLs against the database",
+      "URLhaus API integration for additional scam data",
+    ],
+    highlights: [
+      "Built a full-stack application with React frontend and Node.js backend",
+      "Implemented URL analysis and storage functionality",
+      "Integrated external API (URLhaus) for enhanced scam detection",
+      "Designed a user-friendly interface for checking scams",
+    ],
+    folderPath:
+      "This PC > Documents > Projects > Full-Stack Projects > ScamStop",
+    links: {
+      repo: "https://github.com/Edu-Silva95/ScamStop",
+      live: "",
+    },
+  },
 ];
 
 export const projectsById = Object.fromEntries(

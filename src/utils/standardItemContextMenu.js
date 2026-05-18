@@ -7,6 +7,7 @@ export const buildStandardItemContextMenu = ({
   onCopy,
   onRename,
   onDelete,
+  onProperties,
 } = {}) => {
   return {
     x,
@@ -18,6 +19,7 @@ export const buildStandardItemContextMenu = ({
       ...(typeof onCopy === "function" ? [{ key: "copy", label: "Copy", onClick: () => onCopy?.(item) }] : []),
       { key: "rename", label: "Rename", onClick: () => onRename?.(item) },
       { key: "delete", label: "Delete", onClick: () => onDelete?.(item) },
+      { key: "properties", label: "Properties", onClick: () => onProperties?.(item) },
     ],
   };
 };

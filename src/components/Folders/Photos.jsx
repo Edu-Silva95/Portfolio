@@ -3,10 +3,11 @@ import FileTable from "./FileTable";
 import { useFileSystem } from "../../context/FileSystemContext";
 import useLongPressContextMenu from "../../hooks/useLongPressContextMenu";
 import { resolveThisPcPath, updateFileTreeList } from "../../utils/fileTreeUpdate";
+import { buildItemProperties } from "../../utils/itemProperties";
 import { buildStandardItemContextMenu } from "../../utils/standardItemContextMenu";
 import { tryOpenImagePlayer, tryOpenTargetWindowItem } from "../../utils/folderOpenUtils";
 
-export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery = "", viewMode = "list", onCountChange, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, onOpenWindow = null, updateWindowPath = null }) {
+export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery = "", viewMode = "list", onCountChange, onContextMenuRequested = null, openProperties = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, onOpenWindow = null, updateWindowPath = null }) {
   const { fileTree, setFileTree, handleContextMenu, copyItems } = useFileSystem();
   const [selectedIds, setSelectedIds] = useState([]);
 
@@ -116,6 +117,7 @@ export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery
         },
         onRename: () => handleRename(item),
         onDelete: () => handleDelete(item),
+        onProperties: () => openProperties?.(buildItemProperties({ item, currentPath: globalCurrent })),
       })
     );
   };
