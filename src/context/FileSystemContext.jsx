@@ -4,6 +4,23 @@ import { initialIcons } from "../config/desktopConfig";
 import { copyFileTreeItems, isFolderLikeItem, moveFileTreeItems, resolveThisPcPath } from "../utils/fileTreeUpdate";
 
 const FileSystemContext = createContext(null);
+const HARDCODED_CREATED_AT = "2026-01-01T09:00:00.000Z";
+
+const withDefaultCreatedAt = (item) => {
+  if (!item || typeof item !== "object") return item;
+  if (item.createdAt) return item;
+  return { ...item, createdAt: HARDCODED_CREATED_AT };
+};
+
+const normalizeEntryListsWithTimestamps = (entry) => {
+  if (!entry || typeof entry !== "object") return entry;
+
+  const next = { ...entry };
+  if (Array.isArray(next.content)) next.content = next.content.map(withDefaultCreatedAt);
+  if (Array.isArray(next.folders)) next.folders = next.folders.map(withDefaultCreatedAt);
+  if (Array.isArray(next.drives)) next.drives = next.drives.map(withDefaultCreatedAt);
+  return next;
+};
 
 export function FileSystemProvider({ children }) {
   const [clipboard, setClipboard] = useState(null);
@@ -81,7 +98,12 @@ export function FileSystemProvider({ children }) {
       tree[docsGamesKey].content = [...(tree[docsGamesKey].content || []), doomItem];
     }
 
-    return tree;
+    const normalizedTree = {};
+    Object.entries(tree).forEach(([path, entry]) => {
+      normalizedTree[path] = normalizeEntryListsWithTimestamps(entry);
+    });
+
+    return normalizedTree;
   });
 
   // One-time repair pass: normalize open-metadata across the whole tree so
@@ -219,10 +241,52 @@ export function FileSystemProvider({ children }) {
     setFileTree((prev) => {
       const entry = prev["This PC > Desktop"] ? { ...prev["This PC > Desktop"] } : { content: [] };
       const current = Array.isArray(entry.content) ? [...entry.content] : [];
-      const nextContent = typeof updater === "function" ? updater(current) : Array.isArray(updater) ? updater : current;
+      const nextContentRaw = typeof updater === "function" ? updater(current) : Array.isArray(updater) ? updater : current;
+      const nextContent = Array.isArray(nextContentRaw) ? nextContentRaw.map(withDefaultCreatedAt) : current;
       return { ...prev, ["This PC > Desktop"]: { ...entry, content: nextContent } };
     });
   }
+
+  const updateItemTimestamp = (path, itemKey, field) => {
+    const resolvedPath = resolveThisPcPath(path);
+    if (!resolvedPath || !itemKey || !field) return;
+
+    const nowIso = new Date().toISOString();
+
+    setFileTree((prev) => {
+      const entry = prev[resolvedPath];
+      if (!entry || typeof entry !== "object") return prev;
+
+      const touchList = (list) => {
+        if (!Array.isArray(list) || list.length === 0) return { list, changed: false };
+        let changed = false;
+        const nextList = list.map((it) => {
+          if (!it || typeof it !== "object") return it;
+          const key = it.id ?? it.name;
+          if (key !== itemKey) return it;
+          changed = true;
+          return { ...withDefaultCreatedAt(it), [field]: nowIso };
+        });
+        return { list: nextList, changed };
+      };
+
+      const nextEntry = { ...entry };
+      const contentResult = touchList(nextEntry.content);
+      const foldersResult = touchList(nextEntry.folders);
+      const drivesResult = touchList(nextEntry.drives);
+
+      if (!contentResult.changed && !foldersResult.changed && !drivesResult.changed) return prev;
+
+      if (contentResult.changed) nextEntry.content = contentResult.list;
+      if (foldersResult.changed) nextEntry.folders = foldersResult.list;
+      if (drivesResult.changed) nextEntry.drives = drivesResult.list;
+
+      return { ...prev, [resolvedPath]: nextEntry };
+    });
+  };
+
+  const markItemAccessed = (path, itemKey) => updateItemTimestamp(path, itemKey, "accessedAt");
+  const markItemModified = (path, itemKey) => updateItemTimestamp(path, itemKey, "modifiedAt");
 
   const findFreePosition = (existing = []) => {
     const ICON_W = 100;
@@ -290,7 +354,7 @@ export function FileSystemProvider({ children }) {
         toListKey,
         transformMovedItem: (item, ctx) => {
           const isDestDesktop = ctx?.toPath === "This PC > Desktop";
-          const next = { ...item };
+          const next = { ...withDefaultCreatedAt(item), modifiedAt: new Date().toISOString() };
 
           // Desktop rendering expects stable ids.
           if (isDestDesktop) {
@@ -393,7 +457,7 @@ export function FileSystemProvider({ children }) {
           return item;
         },
         transformCopiedItem: (item, ctx) => {
-          const next = { ...item };
+          const next = { ...withDefaultCreatedAt(item) };
 
           // Make copied items independent.
           if (next.id) next.id = newId("item");
@@ -500,6 +564,7 @@ export function FileSystemProvider({ children }) {
         size: "—",
         isFolder: true,
         isOpenable: true,
+        createdAt: HARDCODED_CREATED_AT,
         ...(isDesktop
           ? {
               x: pos.x,
@@ -548,7 +613,7 @@ export function FileSystemProvider({ children }) {
   }
 
   return (
-    <FileSystemContext.Provider value={{ fileTree, setFileTree, clipboard, setClipboard, copyItems, pasteItems, createFolder, moveItems, handleContextMenu, getDesktopIcons, setDesktopIcons, findFreePosition, updateDesktopIconPosition }}>
+    <FileSystemContext.Provider value={{ fileTree, setFileTree, clipboard, setClipboard, copyItems, pasteItems, createFolder, moveItems, handleContextMenu, getDesktopIcons, setDesktopIcons, findFreePosition, updateDesktopIconPosition, markItemAccessed, markItemModified }}>
       {children}
     </FileSystemContext.Provider>
   );

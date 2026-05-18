@@ -48,7 +48,7 @@ export default function Documents({
   const [itemCount, setItemCount] = useState(0);
   const [selectedIds, setSelectedIds] = useState([]);
 
-  const { fileTree, setFileTree, handleContextMenu, copyItems } = useFileSystem();
+  const { fileTree, setFileTree, handleContextMenu, copyItems, markItemAccessed, markItemModified } = useFileSystem();
   const globalPath = currentPath.startsWith("This PC") ? currentPath : `This PC > ${currentPath}`;
   const currentContent = fileTree[globalPath]?.content || [];
 
@@ -114,6 +114,9 @@ export default function Documents({
 
   // Open folders or special files from the list.
   const handleItemDoubleClick = (item) => {
+    const itemKey = getItemKey(item);
+    markItemAccessed?.(globalPath, itemKey);
+
     // Allow opening moved shortcuts (ex: Browser/DOOM) from inside any folder.
     if (tryOpenTargetWindowItem({ item, onOpenWindow, updateWindowPath })) return;
 
@@ -160,7 +163,8 @@ export default function Documents({
     }
     const name = prompt("Rename", item.name);
     if (!name || name === item.name) return;
-    updateCurrentList((prev) => prev.map((it) => (it.name === item.name ? { ...it, name } : it)));
+    updateCurrentList((prev) => prev.map((it) => (it.name === item.name ? { ...it, name, modifiedAt: new Date().toISOString() } : it)));
+    markItemModified?.(globalPath, getItemKey(item));
   };
 
   const handleDelete = (item) => {

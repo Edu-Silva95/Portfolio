@@ -32,7 +32,7 @@ function App() {
   const openableIds = Object.keys(windowsConfig);
   // split state into hooks
     // Desktop icon state is now stored in FileSystemContext
-    const { getDesktopIcons, setDesktopIcons, findFreePosition, updateDesktopIconPosition, createFolder, clipboard, copyItems, pasteItems } = useFileSystem();
+    const { getDesktopIcons, setDesktopIcons, findFreePosition, updateDesktopIconPosition, createFolder, clipboard, copyItems, pasteItems, markItemAccessed, markItemModified } = useFileSystem();
     const icons = getDesktopIcons();
     const [draggingPositions, _setDraggingPositions] = useState({});
     const [selectedIds, setSelectedIds] = useState([]);
@@ -56,6 +56,7 @@ function App() {
   
   const handleIconClick = (id) => {
     const icon = icons.find((it) => it.id === id);
+    markItemAccessed?.("This PC > Desktop", id);
     openDesktopIcon({
       icon,
       fallbackId: id,
@@ -100,6 +101,8 @@ function App() {
     viewPageSource,
     selectedIds,
     setSelectedIds,
+    markItemAccessed,
+    markItemModified,
     confirmDesktopDelete,
     moveDesktopIconToRecycleBin,
     createFolder,

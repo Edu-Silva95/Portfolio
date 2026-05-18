@@ -28,6 +28,21 @@ const pushDetail = (details, label, value) => {
   details.push({ label, value: normalized });
 };
 
+const formatDateValue = (value) => {
+  if (!value) return "Unknown";
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "Unknown";
+
+  return date.toLocaleString([], {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
 export function buildItemProperties({ item = null, currentPath = null, project = null, title = null } = {}) {
   const resolvedProject = project || getProjectById(item?.projectId);
   const name = getItemName(item);
@@ -38,6 +53,18 @@ export function buildItemProperties({ item = null, currentPath = null, project =
   pushDetail(details, "Type", type);
   pushDetail(details, "Location", location);
   pushDetail(details, "Size", item?.size);
+  details.push({
+    label: "Created",
+    value: formatDateValue(item?.createdAt ?? item?.created ?? item?.dateCreated ?? item?.createdDate),
+  });
+  details.push({
+    label: "Modified",
+    value: formatDateValue(item?.modifiedAt ?? item?.modified ?? item?.dateModified ?? item?.modifiedDate),
+  });
+  details.push({
+    label: "Accessed",
+    value: formatDateValue(item?.accessedAt ?? item?.accessed ?? item?.dateAccessed ?? item?.accessedDate),
+  });
 
   if (item?.isFolder && typeof item?.childCount === "number") {
     const suffix = item.childCount === 1 ? "item" : "items";

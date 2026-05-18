@@ -49,7 +49,7 @@ export default function ProjectsFolder({
   const [viewMode, setViewMode] = useState("list");
   const [selectedIds, setSelectedIds] = useState([]);
 
-  const { fileTree, setFileTree, copyItems } = useFileSystem();
+  const { fileTree, setFileTree, copyItems, markItemAccessed, markItemModified } = useFileSystem();
 
   const backgroundLongPress = useLongPressContextMenu({
     enabled: !!onContextMenuRequested,
@@ -82,7 +82,8 @@ export default function ProjectsFolder({
   const handleRename = (project) => {
     const name = prompt("Rename", project.name);
     if (!name || name === project.name) return;
-    updateCurrentList((prev) => prev.map((it) => (it.name === project.name ? { ...it, name } : it)));
+    updateCurrentList((prev) => prev.map((it) => (it.name === project.name ? { ...it, name, modifiedAt: new Date().toISOString() } : it)));
+    markItemModified?.(globalPath, project.id ?? project.name);
   };
 
   const handleDelete = (project) => {
@@ -113,6 +114,7 @@ export default function ProjectsFolder({
 
   function handleItemDoubleClick(item) {
     if (!item) return;
+    markItemAccessed?.(globalPath, item.id ?? item.name);
 
     if (tryOpenTargetWindowItem({ item, onOpenWindow, updateWindowPath })) return;
 

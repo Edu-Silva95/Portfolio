@@ -8,7 +8,7 @@ import { buildStandardItemContextMenu } from "../../utils/standardItemContextMen
 import { tryOpenImagePlayer, tryOpenTargetWindowItem } from "../../utils/folderOpenUtils";
 
 export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery = "", viewMode = "list", onCountChange, onContextMenuRequested = null, openProperties = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, onOpenWindow = null, updateWindowPath = null }) {
-  const { fileTree, setFileTree, handleContextMenu, copyItems } = useFileSystem();
+  const { fileTree, setFileTree, handleContextMenu, copyItems, markItemAccessed, markItemModified } = useFileSystem();
   const [selectedIds, setSelectedIds] = useState([]);
 
   const globalBase = resolveThisPcPath(basePath);
@@ -51,6 +51,8 @@ export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery
 
   // Drill into nested photo folders.
   const handleItemDoubleClick = (item) => {
+    markItemAccessed?.(globalCurrent, getItemKey(item));
+
     if (item.isFolder) {
       const newPath = `${currentPath} > ${item.name}`;
       onFolderOpen?.(newPath);
@@ -80,7 +82,8 @@ export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery
     }
     const name = prompt("Rename", item.name);
     if (!name || name === item.name) return;
-    updateList(globalCurrent, (prev) => prev.map((it) => (it.name === item.name ? { ...it, name } : it)));
+    updateList(globalCurrent, (prev) => prev.map((it) => (it.name === item.name ? { ...it, name, modifiedAt: new Date().toISOString() } : it)));
+    markItemModified?.(globalCurrent, getItemKey(item));
   };
 
   const handleDelete = (item) => {

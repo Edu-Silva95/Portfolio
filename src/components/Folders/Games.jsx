@@ -7,7 +7,7 @@ import { resolveProjectForPath } from "../../utils/projectResolve";
 import { tryOpenImagePlayer, tryOpenProjectVirtualItem, tryOpenTargetWindowItem } from "../../utils/folderOpenUtils";
 
 export function GamesContent({ basePath = "This PC > Games", currentPath = null, onFolderOpen = null, searchQuery = "", viewMode = "list", onCountChange, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, onOpenWindow = null, updateWindowPath = null, selectedIds: selectedIdsProp = null, onSelectionChange = null }) {
-  const { fileTree, setFileTree, handleContextMenu, copyItems } = useFileSystem();
+  const { fileTree, setFileTree, handleContextMenu, copyItems, markItemAccessed, markItemModified } = useFileSystem();
   const [localSelectedIds, setLocalSelectedIds] = useState([]);
   // Allow parent to control selection when provided.
   const selectedIds = Array.isArray(selectedIdsProp) ? selectedIdsProp : localSelectedIds;
@@ -83,9 +83,10 @@ export function GamesContent({ basePath = "This PC > Games", currentPath = null,
     if (!name || name === item.name) return;
     setFileTree((prev) => {
       const entry = prev[globalPath] ? { ...prev[globalPath] } : { content: [] };
-      const next = (entry.content || []).map((it) => (it.name === item.name ? { ...it, name } : it));
+      const next = (entry.content || []).map((it) => (it.name === item.name ? { ...it, name, modifiedAt: new Date().toISOString() } : it));
       return { ...prev, [globalPath]: { ...entry, content: next } };
     });
+    markItemModified?.(globalPath, getItemKey(item));
   };
 
   const getItemKey = (item) => item.id ?? item.name;
@@ -111,6 +112,8 @@ export function GamesContent({ basePath = "This PC > Games", currentPath = null,
 
   // Open the linked game window based on item name.
   const handleOpen = (item) => {
+    markItemAccessed?.(globalPath, getItemKey(item));
+
     if (tryOpenTargetWindowItem({ item, onOpenWindow, updateWindowPath })) return;
 
     const displayName = String(item?.originalName || item?.name || "");

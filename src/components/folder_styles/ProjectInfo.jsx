@@ -35,7 +35,7 @@ export default function ProjectInfo({
   });
   const [selectedIds, setSelectedIds] = useState([]);
   const [itemCount, setItemCount] = useState(0);
-  const { fileTree, setFileTree, handleContextMenu, copyItems } = useFileSystem();
+  const { fileTree, setFileTree, handleContextMenu, copyItems, markItemAccessed, markItemModified } = useFileSystem();
 
   const backgroundLongPress = useLongPressContextMenu({
     enabled: !!onContextMenuRequested,
@@ -103,7 +103,8 @@ export default function ProjectInfo({
     }
     const name = prompt("Rename", item.name);
     if (!name || name === item.name) return;
-    updateCurrentList((prev) => prev.map((it) => (getItemKey(it) === getItemKey(item) ? { ...it, name } : it)));
+    updateCurrentList((prev) => prev.map((it) => (getItemKey(it) === getItemKey(item) ? { ...it, name, modifiedAt: new Date().toISOString() } : it)));
+    markItemModified?.(currentPath, getItemKey(item));
   };
 
   const handleDelete = (item) => {
@@ -157,6 +158,7 @@ export default function ProjectInfo({
 
   const handleItemDoubleClick = (item) => {
     if (!item) return;
+    markItemAccessed?.(currentPath, getItemKey(item));
 
     const displayName = String(item?.originalName || item?.name || "");
 

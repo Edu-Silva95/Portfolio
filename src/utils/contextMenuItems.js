@@ -17,6 +17,8 @@ export const buildDesktopContextMenuItems = ({
   viewPageSource,
   selectedIds,
   setSelectedIds,
+  markItemAccessed,
+  markItemModified,
   confirmDesktopDelete,
   moveDesktopIconToRecycleBin,
   createFolder,
@@ -53,6 +55,7 @@ export const buildDesktopContextMenuItems = ({
         key: "open",
         label: "Open",
         onClick: () => {
+          markItemAccessed?.("This PC > Desktop", contextMenu.targetId);
           const icon = icons.find((it) => it.id === contextMenu.targetId);
           // Use shared desktop routing so dynamic icons (like newly created folders)
           // can open the correct window + path.
@@ -103,10 +106,11 @@ export const buildDesktopContextMenuItems = ({
             setIcons((prev) =>
               prev.map((iconItem) =>
                 iconItem.id === contextMenu.targetId
-                  ? { ...iconItem, label: name }
+                  ? { ...iconItem, label: name, name, modifiedAt: new Date().toISOString() }
                   : iconItem,
               ),
             );
+            markItemModified?.("This PC > Desktop", contextMenu.targetId);
           }
           closeContextMenu();
         },
