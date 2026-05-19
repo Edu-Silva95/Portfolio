@@ -141,7 +141,7 @@ export default function ProjectInfo({
         },
         onRename: handleRename,
         onDelete: handleDelete,
-        onProperties: () => openProperties?.(buildItemProperties({ item, currentPath })),
+        onProperties: () => openProperties?.(buildItemProperties({ item, currentPath, pathMap: fileTree })),
       })
     );
   };

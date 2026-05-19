@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { calculateFolderSize, formatBytes } from "../../utils/folderSizes";
+import { formatDateValue } from "../../utils/itemProperties";
 import useMarqueeSelect from "../../hooks/useMarqueeSelect";
 import { useFileSystem } from "../../context/FileSystemContext";
 import { readFsItemDndDataTransfer, setFsItemDndDataTransfer } from "../../utils/dragDropPayload";
@@ -21,6 +22,12 @@ const FileTable = ({
   enableDrop = null,
 }) => {
   const containerRef = useRef(null);
+  const MIN_NAME_WIDTH = 180;
+  const MIN_COL_WIDTHS = { modified: 150, type: 100, size: 84 };
+  const [tableWidth, setTableWidth] = useState(0);
+  const [colWidths, setColWidths] = useState({ modified: 160, type: 120, size: 100 });
+  const [resizing, setResizing] = useState(null); // { key, startX, startWidth }
+  const [sortState, setSortState] = useState({ key: null, dir: "asc" });
   const lastTapRef = useRef({ id: null, at: 0 }); //last click for touch devices to emulate double-click
   const longPressRef = useRef({ timer: null, startX: 0, startY: 0, moved: false });
   const suppressNextClickRef = useRef(false);
@@ -224,6 +231,116 @@ const FileTable = ({
     isCoarsePointer,
   });
 
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node || typeof ResizeObserver === "undefined") return undefined;
+
+    const updateWidth = () => setTableWidth(node.clientWidth || 0);
+    updateWidth();
+
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  const getMaxAllowedWidth = (key, widths = colWidths) => {
+    if (!tableWidth) return Infinity;
+    const otherKeys = Object.keys(MIN_COL_WIDTHS).filter((colKey) => colKey !== key);
+    const otherMinTotal = otherKeys.reduce((sum, colKey) => sum + MIN_COL_WIDTHS[colKey], 0);
+    const actionWidth = actions ? 80 : 0;
+    const max = tableWidth - MIN_NAME_WIDTH - otherMinTotal - actionWidth;
+    return Math.max(MIN_COL_WIDTHS[key], max);
+  };
+
+  const startResize = (key, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    setResizing({ key, startX, startWidth: colWidths[key] });
+  };
+
+  useEffect(() => {
+    if (!resizing) return undefined;
+    const onMove = (ev) => {
+      const dx = ev.clientX - resizing.startX;
+      setColWidths((prev) => {
+        const nextWidth = Math.round(resizing.startWidth - dx);
+        const minWidth = MIN_COL_WIDTHS[resizing.key] ?? 48;
+        const maxWidth = getMaxAllowedWidth(resizing.key, prev);
+        return {
+          ...prev,
+          [resizing.key]: Math.min(Math.max(minWidth, nextWidth), maxWidth),
+        };
+      });
+    };
+    const onUp = () => setResizing(null);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp, { once: true });
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+  }, [resizing]);
+
+  const toggleSort = (key) => {
+    setSortState((prev) => {
+      if (prev.key === key) return { key, dir: prev.dir === "asc" ? "desc" : "asc" };
+      return { key, dir: "asc" };
+    });
+  };
+
+  const getModifiedTimestamp = (item) => {
+    const v = item?.modifiedAt ?? item?.modified ?? item?.dateModified ?? item?.modifiedDate ?? item?.createdAt ?? item?.created ?? item?.dateCreated ?? null;
+    if (!v) return null;
+    const d = v instanceof Date ? v : new Date(v);
+    return Number.isNaN(d.getTime()) ? null : d.getTime();
+  };
+
+  const getSizeValue = (item) => {
+    if (item?.isFolder) {
+      if (currentPath && pathMap) {
+        try {
+          return calculateFolderSize(`${currentPath} > ${item.name}`, pathMap) || 0;
+        } catch {
+          return 0;
+        }
+      }
+      return 0;
+    }
+    if (typeof item?.size === "number") return item.size;
+    const n = Number(item?.size);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const sortedItems = useMemo(() => {
+    if (!Array.isArray(items)) return [];
+    const list = [...items];
+    const { key, dir } = sortState;
+    if (!key) return list;
+    list.sort((a, b) => {
+      if (key === "name") {
+        return String(a.name ?? "").localeCompare(String(b.name ?? "")) * (dir === "asc" ? 1 : -1);
+      }
+      if (key === "modified") {
+        const av = getModifiedTimestamp(a) ?? 0;
+        const bv = getModifiedTimestamp(b) ?? 0;
+        return (av - bv) * (dir === "asc" ? 1 : -1);
+      }
+      if (key === "type") {
+        const at = String(a.type ?? (a.isFolder ? "File folder" : "")).toLowerCase();
+        const bt = String(b.type ?? (b.isFolder ? "File folder" : "")).toLowerCase();
+        return at.localeCompare(bt) * (dir === "asc" ? 1 : -1);
+      }
+      if (key === "size") {
+        const av = getSizeValue(a);
+        const bv = getSizeValue(b);
+        return (av - bv) * (dir === "asc" ? 1 : -1);
+      }
+      return 0;
+    });
+    return list;
+  }, [items, sortState, currentPath, pathMap]);
+
   // Icons view with marquee selection.
   if (viewMode === "icons") {
     return (
@@ -324,23 +441,77 @@ const FileTable = ({
           }}
         />
       ) : null}
-      <table className="w-full text-sm table-fixed">
+      <table className="w-full text-sm" style={{ tableLayout: "fixed" }}>
         <colgroup>
           <col />
-          <col className="w-32 md:w-48" />
-          <col className="w-24 md:w-28" />
-          {actions && <col className="w-20 md:w-24" />}
+          <col style={{ width: `${colWidths.modified}px` }} />
+          <col style={{ width: `${colWidths.type}px` }} />
+          <col style={{ width: `${colWidths.size}px` }} />
+          {actions && <col style={{ width: 1 }} />}
         </colgroup>
         <thead className="border-b border-white/10">
-          <tr className="text-left">
-            <th className="pb-2 font-semibold px-2">Name</th>
-            <th className="pb-2 font-semibold pl-4 pr-2 md:px-2 text-center">Type</th>
-            <th className="pb-2 font-semibold px-2 text-center">Size</th>
+          <tr className="text-left select-none">
+            <th className="pb-2 font-semibold px-2" onClick={() => toggleSort("name")}>
+              <div className="flex items-center gap-2">
+                <span>Name</span>
+                <button type="button" className="ml-auto text-xs text-white/60" onClick={(e) => { e.stopPropagation(); toggleSort("name"); }}>
+                  {sortState.key === "name" ? (sortState.dir === "asc" ? "▲" : "▼") : ""}
+                </button>
+              </div>
+            </th>
+            <th className="pb-2 font-semibold pl-1 pr-2 md:px-2 text-center" onClick={() => toggleSort("modified")}>
+              <div className="flex items-center w-full min-w-0 overflow-hidden">
+                <span
+                  className="text-white/60 mr-1 cursor-col-resize shrink-0"
+                  onPointerDown={(e) => startResize("modified", e)}
+                >
+                  |
+                </span>
+                <span className="flex-1 min-w-0 truncate text-center">Date modified</span>
+                <button type="button" className="ml-1 text-xs text-white/60 shrink-0" onClick={(e) => { e.stopPropagation(); toggleSort("modified"); }}>
+                  {sortState.key === "modified" ? (sortState.dir === "asc" ? "▲" : "▼") : ""}
+                </button>
+              </div>
+            </th>
+            <th className="pb-2 font-semibold px-2 text-center" onClick={() => toggleSort("type")}>
+              <div className="flex items-center w-full min-w-0 overflow-hidden">
+                <span
+                  className="text-white/60 mr-1 cursor-col-resize shrink-0"
+                  onPointerDown={(e) => startResize("type", e)}
+                >
+                  |
+                </span>
+                <span className="flex-1 min-w-0 truncate text-center">Type</span>
+                <button type="button" className="ml-1 text-xs text-white/60 shrink-0" onClick={(e) => { e.stopPropagation(); toggleSort("type"); }}>
+                  {sortState.key === "type" ? (sortState.dir === "asc" ? "▲" : "▼") : ""}
+                </button>
+              </div>
+            </th>
+            <th className="pb-2 font-semibold px-2 text-center" onClick={() => toggleSort("size")}>
+              <div className="flex items-center w-full min-w-0 overflow-hidden">
+                <span
+                  className="text-white/60 mr-1 cursor-col-resize shrink-0"
+                  onPointerDown={(e) => startResize("size", e)}
+                >
+                  |
+                </span>
+                <span className="flex-1 min-w-0 truncate text-center">Size</span>
+                <button type="button" className="ml-1 text-xs text-white/60 shrink-0" onClick={(e) => { e.stopPropagation(); toggleSort("size"); }}>
+                  {sortState.key === "size" ? (sortState.dir === "asc" ? "▲" : "▼") : ""}
+                </button>
+                <span
+                  className="ml-1 text-white/60 cursor-col-resize shrink-0"
+                  onPointerDown={(e) => startResize("size", e)}
+                >
+                  |
+                </span>
+              </div>
+            </th>
             {actions && <th className="pb-2 font-semibold px-2 text-right"> </th>}
           </tr>
         </thead>
         <tbody>
-          {items.map((item) => (
+          {sortedItems.map((item) => (
             (() => {
               const interactive =
                 item.path ||
@@ -379,11 +550,14 @@ const FileTable = ({
                   <span className="min-w-0 truncate">{item.name}</span>
                 </div>
               </td>
-              <td className="pl-4 pr-2 md:px-2 overflow-hidden text-center">
-                <span className="block truncate">{item.type}</span>
+              <td className="px-2 overflow-hidden text-center">
+                <span className="block min-w-0 truncate text-center">{formatDateValue(item?.modifiedAt ?? item?.modified ?? item?.dateModified ?? item?.modifiedDate ?? item?.createdAt ?? item?.created ?? item?.dateCreated)}</span>
+              </td>
+              <td className="px-2 overflow-hidden text-center">
+                <span className="block min-w-0 truncate text-center">{item.type}</span>
               </td>
               <td className="px-2 text-center text-white/70 overflow-hidden">
-                <span className="block truncate">{getItemSizeLabel(item)}</span>
+                <span className="block min-w-0 truncate text-center">{getItemSizeLabel(item)}</span>
               </td>
               {actions && <td className="px-2 text-right">{actions(item)}</td>}
             </tr>

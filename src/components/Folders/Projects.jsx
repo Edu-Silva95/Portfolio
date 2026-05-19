@@ -218,7 +218,7 @@ export default function ProjectsFolder({
                   },
                   onRename: handleRename,
                   onDelete: handleDelete,
-                  onProperties: () => openProperties?.(buildItemProperties({ item, currentPath: globalPath })),
+                  onProperties: () => openProperties?.(buildItemProperties({ item, currentPath: globalPath, pathMap: fileTree })),
                 })
               );
             }}

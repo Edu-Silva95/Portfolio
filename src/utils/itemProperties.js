@@ -1,4 +1,5 @@
 import { getProjectById } from "../data/projectsData";
+import { calculateFolderSize, formatBytes } from "./folderSizes";
 
 const normalizeText = (value, fallback = "—") => {
   if (value == null) return fallback;
@@ -28,7 +29,7 @@ const pushDetail = (details, label, value) => {
   details.push({ label, value: normalized });
 };
 
-const formatDateValue = (value) => {
+export const formatDateValue = (value) => {
   if (!value) return "Unknown";
 
   const date = value instanceof Date ? value : new Date(value);
@@ -43,23 +44,29 @@ const formatDateValue = (value) => {
   });
 };
 
-export function buildItemProperties({ item = null, currentPath = null, project = null, title = null } = {}) {
+export function buildItemProperties({ item = null, currentPath = null, pathMap = null, project = null, title = null } = {}) {
   const resolvedProject = project || getProjectById(item?.projectId);
   const name = getItemName(item);
   const type = getItemType(item);
   const location = getItemLocation(item, currentPath);
   const details = [];
+  const calculatedFolderSize =
+    item?.isFolder && pathMap && typeof currentPath === "string"
+      ? calculateFolderSize(`${currentPath} > ${name}`, pathMap)
+      : 0;
+  const sizeValue = calculatedFolderSize > 0 ? formatBytes(calculatedFolderSize) : item?.size;
 
   pushDetail(details, "Type", type);
   pushDetail(details, "Location", location);
-  pushDetail(details, "Size", item?.size);
+  pushDetail(details, "Size", sizeValue);
+  const createdValue = formatDateValue(item?.createdAt ?? item?.created ?? item?.dateCreated ?? item?.createdDate);
   details.push({
     label: "Created",
-    value: formatDateValue(item?.createdAt ?? item?.created ?? item?.dateCreated ?? item?.createdDate),
+    value: createdValue,
   });
   details.push({
     label: "Modified",
-    value: formatDateValue(item?.modifiedAt ?? item?.modified ?? item?.dateModified ?? item?.modifiedDate),
+    value: formatDateValue(item?.modifiedAt ?? item?.modified ?? item?.dateModified ?? item?.modifiedDate ?? createdValue),
   });
   details.push({
     label: "Accessed",

@@ -10,10 +10,11 @@ import { PhotosContent } from "./Photos";
 import { GamesContent } from "./Games";
 import { resolveProjectForPath } from "../../utils/projectResolve";
 import { openExternalUrl } from "../../utils/externalUrl";
+import { buildItemProperties } from "../../utils/itemProperties";
 import { tryOpenImagePlayer, tryOpenProjectVirtualItem, tryOpenTargetWindowItem } from "../../utils/folderOpenUtils";
 import useLongPressContextMenu from "../../hooks/useLongPressContextMenu";
 
-export default function ThisPC({ onClose, onMinimize, minimized = false, minimizing = false, onOpenWindow = () => { }, initialPath = "This PC", centered = false, defaultWidth = 700, defaultHeight = 420, windowId = "", updateWindowPath = null, savedPath = null, savedHistory = null, onContextMenuRequested = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, openableIds = [], closing = false }) {
+export default function ThisPC({ onClose, onMinimize, minimized = false, minimizing = false, onOpenWindow = () => { }, initialPath = "This PC", centered = false, defaultWidth = 700, defaultHeight = 420, windowId = "", updateWindowPath = null, savedPath = null, savedHistory = null, onContextMenuRequested = null, openProperties = null, onMoveToRecycleBin = null, onCreateDesktopShortcut = null, pendingRestores = null, onConsumeRestore = null, openableIds = [], closing = false }) {
   const { currentPath, pushPath, handleBack, handleForward, canGoBack, canGoForward } = useFolderNavigation({
     initialPath,
     savedPath,
@@ -29,7 +30,7 @@ export default function ThisPC({ onClose, onMinimize, minimized = false, minimiz
   const [itemCount, setItemCount] = useState(0);
   const [selectedIds, setSelectedIds] = useState([]);
 
-  const { fileTree, setFileTree, handleContextMenu, copyItems } = useFileSystem();
+  const { fileTree, setFileTree, handleContextMenu, copyItems, markItemAccessed, markItemModified } = useFileSystem();
   const currentData = fileTree[currentPath] || fileTree["This PC"];
 
   const backgroundLongPress = useLongPressContextMenu({
@@ -76,6 +77,8 @@ export default function ThisPC({ onClose, onMinimize, minimized = false, minimiz
 
   // Open windows or drill into folders from the list.
   const handleItemDoubleClick = (item) => {
+    markItemAccessed?.(currentPath, item.id ?? item.name);
+
     // Allow opening moved shortcuts (ex: Browser/DOOM/Readme) from inside any folder.
     if (tryOpenTargetWindowItem({ item, onOpenWindow, updateWindowPath })) return;
 
@@ -166,7 +169,8 @@ export default function ThisPC({ onClose, onMinimize, minimized = false, minimiz
     }
     const name = prompt("Rename", item.name);
     if (!name || name === item.name) return;
-    updateList(path, listKey, (prev) => prev.map((it) => (it.name === item.name ? { ...it, name } : it)));
+    updateList(path, listKey, (prev) => prev.map((it) => (it.name === item.name ? { ...it, name, modifiedAt: new Date().toISOString() } : it)));
+    markItemModified?.(path, item.id ?? item.name);
   };
 
   // Delete with multi-select support; block deleting drives.
@@ -210,6 +214,7 @@ export default function ThisPC({ onClose, onMinimize, minimized = false, minimiz
         ...(listKey === "drives" ? [] : [{ key: "copy", label: "Copy", onClick: () => copyItems?.({ fromPath: path, fromListKey: listKey, itemKeys: keysToCopy }) }]),
         { key: "rename", label: "Rename", onClick: () => handleRename(path, listKey, item) },
         { key: "delete", label: "Delete", onClick: () => handleDelete(path, listKey, item) },
+        { key: "properties", label: "Properties", onClick: () => openProperties?.(buildItemProperties({ item, currentPath: path, pathMap: fileTree })) },
       ],
     });
   };

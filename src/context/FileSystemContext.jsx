@@ -4,7 +4,7 @@ import { initialIcons } from "../config/desktopConfig";
 import { copyFileTreeItems, isFolderLikeItem, moveFileTreeItems, resolveThisPcPath } from "../utils/fileTreeUpdate";
 
 const FileSystemContext = createContext(null);
-const HARDCODED_CREATED_AT = "2026-01-01T09:00:00.000Z";
+const HARDCODED_CREATED_AT = "2026-01-01T09:06:43.000Z";
 
 const withDefaultCreatedAt = (item) => {
   if (!item || typeof item !== "object") return item;

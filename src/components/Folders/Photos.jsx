@@ -120,7 +120,7 @@ export function PhotosContent({ currentPath, basePath, onFolderOpen, searchQuery
         },
         onRename: () => handleRename(item),
         onDelete: () => handleDelete(item),
-        onProperties: () => openProperties?.(buildItemProperties({ item, currentPath: globalCurrent })),
+        onProperties: () => openProperties?.(buildItemProperties({ item, currentPath: globalCurrent, pathMap: fileTree })),
       })
     );
   };

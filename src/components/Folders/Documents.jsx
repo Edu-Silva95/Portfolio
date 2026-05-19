@@ -200,7 +200,7 @@ export default function Documents({
         { key: "copy", label: "Copy", onClick: () => copyItems?.({ fromPath: globalPath, fromListKey: "content", itemKeys: keysToCopy }) },
         { key: "rename", label: "Rename", onClick: () => handleRename(item) },
         { key: "delete", label: "Delete", onClick: () => handleDelete(item) },
-        { key: "properties", label: "Properties", onClick: () => openProperties?.(buildItemProperties({ item, currentPath: globalPath })) },
+        { key: "properties", label: "Properties", onClick: () => openProperties?.(buildItemProperties({ item, currentPath: globalPath, pathMap: fileTree })) },
       ],
     });
   };
